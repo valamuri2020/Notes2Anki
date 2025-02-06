@@ -18,6 +18,7 @@ card_model = genanki.Model(
     ],
     templates=[
         {
+            # required field
             'name': 'Card 1',
             'qfmt': '{{Question}}',
             'afmt': '{{Answer}}'
@@ -26,10 +27,18 @@ card_model = genanki.Model(
 )
 
 # Create a new deck
-deck_id = 1678905432  # Replace with a unique number if needed, or use random.randrange(1 << 30, 1 << 31)
+
+# Purpose of IDs in Anki
+
+# In Anki, both decks and card models are identified by unique IDs. These IDs serve a few important purposes:
+
+# Uniqueness: Anki needs a way to distinguish between different decks and card models. If you have multiple decks or models, each must have a unique identifier so Anki can manage them separately.
+# Database Integrity: Anki uses a database internally to store your decks, cards, and models. These IDs are crucial for maintaining relationships and references within the database. For example, when a card is created, it needs to be associated with a specific deck and a specific card model using these IDs.
+
+
 deck = genanki.Deck(
-    deck_id,
-    'My Question Answer Deck'  # Replace with your desired deck name
+    deck_id=random.randrange(1 << 30, 1 << 31),
+    name='My Question Answer Deck'  # Replace with your desired deck name
 )
 
 # Loop through the question-answer pairs and create cards
