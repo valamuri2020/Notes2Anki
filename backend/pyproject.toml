@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "notes2anki"
+version = "0.1.0"
+description = ""
+authors = ["Vivek Alamuri <valamuri@uwaterloo.ca>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+genanki = "^0.13.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
