@@ -1,3 +1,4 @@
 backend/*.apkg
 backend/.env
 backend/mock_data/
+*__pycache__*
