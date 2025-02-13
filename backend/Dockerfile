@@ -11,11 +11,11 @@ COPY poetry.lock pyproject.toml /app/
 # Configure poetry to create the virtualenv inside the project directory
 RUN poetry config virtualenvs.in-project true
 
-# Install dependencies
-RUN poetry install --no-dev --no-root
+# Install dependencies; use compile to convert Python to bytecode upon install instead of first run
+RUN poetry install --without dev --no-root --compile
 
 # Development stage
-FROM python:3.11-slim as development
+FROM python:3.11-slim AS development
 
 # Copy virtual environment from builder
 COPY --from=builder /app/.venv /app/.venv
@@ -26,7 +26,12 @@ COPY --from=builder /app/pyproject.toml /app/pyproject.toml
 WORKDIR /app
 
 # Copy application code
-COPY . /app/
+COPY main.py /app/
+COPY config.py /app/
+COPY backend/services/validator.py /app/services/
+COPY backend/services/file_processor.py /app/services/
+COPY backend/services/anki_generator.py /app/services/
+COPY backend/services/card_creator.py /app/services/
 
 # Create directory for temporary files
 RUN mkdir -p /app/tmp
@@ -42,7 +47,7 @@ EXPOSE 8000
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 # Production stage
-FROM python:3.11-slim as production
+FROM python:3.11-slim AS production
 
 # Copy virtual environment from builder
 COPY --from=builder /app/.venv /app/.venv
@@ -53,7 +58,9 @@ COPY --from=builder /app/pyproject.toml /app/pyproject.toml
 WORKDIR /app
 
 # Copy application code
-COPY . /app/
+COPY main.py /app/
+COPY config.py /app/
+COPY ./services/ /app/
 
 # Create directory for temporary files
 RUN mkdir -p /app/tmp
