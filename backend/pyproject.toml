@@ -12,7 +12,13 @@ docling = "^2.18.0"
 fastapi = "^0.115.8"
 uvicorn = "^0.34.0"
 cohere = "^5.13.12"
+python-multipart = "^0.0.20"
 
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+flake8 = "^7.1.1"
+mypy = "^1.15.0"
 
 [build-system]
 requires = ["poetry-core"]
