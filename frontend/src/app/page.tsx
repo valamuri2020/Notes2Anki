@@ -1,11 +1,11 @@
+// src/app/page.tsx
 "use client";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FileUpload from "@/components/FileUpload";
-
 import Header from "@/components/Header";
-import ProcessingLoader from "../components/ProcessingLoader";
+import CreativeLoader from "@/components/ProcessingLoader";
 import DownloadSection from "@/components/DownloadSection";
 import KofiButton from "@/components/KofiButton";
 
@@ -23,7 +23,7 @@ export default function Home() {
     setTimeout(() => {
       setIsProcessing(false);
       setIsDownloadReady(true);
-    }, 3000);
+    }, 10000);
   };
 
   return (
@@ -31,37 +31,49 @@ export default function Home() {
       <Header />
 
       <div className="max-w-4xl mx-auto mt-16">
-        <FileUpload
-          files={files}
-          setFiles={setFiles}
-        />
+        <AnimatePresence mode="wait">
+          {!isProcessing && !isDownloadReady && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <FileUpload
+                files={files}
+                setFiles={setFiles}
+              />
 
-        <div className="mt-8 flex justify-center">
-          <AnimatePresence mode="wait">
-            {!isProcessing && !isDownloadReady && (
-              <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className={`px-8 py-3 rounded-lg text-white text-lg font-medium transition-colors
-                  ${files.length === 0
-                    ? 'bg-neutral-400 cursor-not-allowed'
-                    : 'bg-[#3A7DFF] hover:bg-[#316BDF]'
-                  }`}
-                onClick={handleSubmit}
-                disabled={files.length === 0}
-              >
-                Generate Flashcards
-              </motion.button>
-            )}
+              <div className="mt-8 flex justify-center">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`px-8 py-3 rounded-lg text-white text-lg font-medium 
+                    transition-colors shadow-lg shadow-blue-500/20
+                    ${files.length === 0
+                      ? 'bg-neutral-400 cursor-not-allowed'
+                      : 'bg-[#3A7DFF] hover:bg-[#316BDF]'
+                    }`}
+                  onClick={handleSubmit}
+                  disabled={files.length === 0}
+                >
+                  Generate Flashcards
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
 
-            {isProcessing && (
-              <ProcessingLoader />
-            )}
-          </AnimatePresence>
-        </div>
+          {isProcessing && (
+            <motion.div
+              key="processing"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="glass-morphism rounded-xl p-12 flex justify-center"
+            >
+              <CreativeLoader />
+            </motion.div>
+          )}
 
-        <AnimatePresence>
           {isDownloadReady && (
             <DownloadSection />
           )}

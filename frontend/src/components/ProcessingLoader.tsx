@@ -1,69 +1,66 @@
-import { motion, useAnimation } from "framer-motion";
-import { useEffect } from "react";
+import { motion } from "framer-motion";
 
 export default function ProcessingLoader() {
-    const controls = useAnimation();
+    const numberOfCards = 8;
+    const radius = 60; // radius of the circular path
 
-    useEffect(() => {
-        const animate = async () => {
-            while (true) {
-                // Flip forward
-                await controls.start({
-                    rotateY: 360,
-                    transition: {
-                        duration: 2,
-                        ease: "easeInOut",
-                    }
-                });
-                // Slow down
-                await controls.start({
-                    rotateY: 720,
-                    transition: {
-                        duration: 3,
-                        ease: "easeInOut",
-                    }
-                });
-                // Flip backward
-                await controls.start({
-                    rotateY: 360,
-                    transition: {
-                        duration: 2,
-                        ease: "easeInOut",
-                    }
-                });
-                // Slow down again
-                await controls.start({
-                    rotateY: 0,
-                    transition: {
-                        duration: 3,
-                        ease: "easeInOut",
-                    }
-                });
-            }
-        };
+    const cards = Array.from({ length: numberOfCards }, (_, i) => {
+        const delay = i * 0.15; // stagger the animations
 
-        animate();
-    }, [controls]);
+        return (
+            <motion.div
+                key={i}
+                className="absolute w-10 h-14 border border-black rounded-md bg-white shadow-sm"
+                animate={{
+                    x: [
+                        0,
+                        radius * Math.cos((2 * Math.PI * i) / numberOfCards),
+                        0
+                    ],
+                    y: [
+                        0,
+                        radius * Math.sin((2 * Math.PI * i) / numberOfCards),
+                        0
+                    ],
+                    scale: [1, 0.8, 1],
+                    opacity: [1, 0.6, 1],
+                }}
+                transition={{
+                    duration: 3,
+                    delay,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                }}
+            />
+        );
+    });
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center"
-        >
-            <div className="perspective-[1000px]">
-                <motion.div
-                    animate={controls}
-                    className="w-20 h-28 bg-white border-2 border-black rounded-lg shadow-lg"
-                    style={{
-                        transformStyle: "preserve-3d"
-                    }}
-                />
+        <div className="flex flex-col items-center">
+            <div className="relative h-40 w-40 mb-8">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    {cards}
+                </div>
             </div>
-            <p className="mt-8 text-lg text-[#767676]">
-                Processing your files...grab a coffee! ☕️
-            </p>
-        </motion.div>
+
+            <motion.div
+                className="text-center"
+                animate={{
+                    opacity: [0.7, 1, 0.7],
+                }}
+                transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatType: "reverse",
+                }}
+            >
+                <p className="text-lg text-[#2C2C2C] font-medium">
+                    Converting your notes
+                </p>
+                <p className="text-sm text-[#767676] mt-2">
+                    Grab a coffee while we prepare your flashcards ☕️
+                </p>
+            </motion.div>
+        </div>
     );
 }
