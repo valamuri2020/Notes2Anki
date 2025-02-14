@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #F9F9F9;
+  --text-primary: #2C2C2C;
+  --text-secondary: #767676;
+  --cta-primary: #3A7DFF;
+  --cta-hover: #316BDF;
+  --neutral-gray: #B0B0B0;
+}
+
+body {
+  background: linear-gradient(135deg, var(--background) 0%, #F0F4FF 100%);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dropzone-active {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(58, 125, 255, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(58, 125, 255, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(58, 125, 255, 0);
+  }
+}
