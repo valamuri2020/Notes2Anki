@@ -35,10 +35,19 @@ class FileProcessor:
             if "temp_file" in locals():
                 os.unlink(temp_file.name)
 
-    def process_file(self, file: UploadFile) -> str:
+    def process_file(self, file: UploadFile, processed_content_dir="mock_data/") -> str:
+        print("Validating file type and size")
         self.validator.validate_file_ext(file)
         self.validator.validate_file_size(file)
 
+        print("Extracting file content")
         text = self._extract_content(file)
+
+        os.makedirs(processed_content_dir, exist_ok=True)
+        output_path = os.path.join(
+            processed_content_dir, "_".join(file.filename.split(".")) + ".md"
+        )
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(text)
 
         return text

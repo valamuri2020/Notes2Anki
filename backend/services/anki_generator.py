@@ -17,7 +17,7 @@ class AnkiDeckInterface:
             templates=[
                 {
                     # required field
-                    "name": "Card 1",
+                    "name": "Q/A",
                     "qfmt": "{{Question}}",
                     "afmt": "{{Answer}}<br><br><small>Source: {{Source}}</small>",
                 }
@@ -43,21 +43,39 @@ class AnkiDeckInterface:
         output_path = os.path.join(output_dir, deck_name + ".apkg")
         genanki.Package(deck).write_to_file(output_path)
 
-        return output_dir
+        return output_path
 
 
 if __name__ == "__main__":
+    import io
+    import sys
+    from services.card_creator import Card, LLMCardCreator
+    from services.file_processor import FileProcessor
     from dotenv import load_dotenv
+    from config import Settings
+    from fastapi import UploadFile
+    from pprint import pprint
 
     load_dotenv()
+    demo_filepath = sys.argv[1]
+    filename = os.path.basename(demo_filepath)
 
-    deck_creator = AnkiDeckInterface()
-    with open("../mock_data/ppt-to-md.md") as f:
-        example_content = f.read()
+    with open(demo_filepath, "rb") as f:
+        file_content = f.read()
+
+    # use same interface as server to process file
+    upload_file = UploadFile(file=io.BytesIO(file_content), filename=filename)
+
+    print("Created UploadFile")
+
+    settings = Settings()
+    processor = FileProcessor(settings)
+    text = processor.process_file(upload_file)
 
     card_creator = LLMCardCreator()
-    cards = card_creator.create_cards(text=example_content, n_cards=20)
+    cards = card_creator.create_cards(text=text, n_cards=None)
 
-    all_cards = {"../mock_data/ppt-to-md.md": cards}
+    # all_cards = {filename: cards}
 
-    deck_creator.generate_deck(all_cards, deck_name="test2", output_dir="../mock_data/")
+    # deck_creator = AnkiDeckInterface()
+    # deck_creator.generate_deck(all_cards, deck_name=filename.split(".")[0])
