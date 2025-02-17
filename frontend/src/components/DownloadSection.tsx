@@ -1,8 +1,35 @@
 // src/components/DownloadSection.tsx
 import { motion } from "framer-motion";
 import { Check, Download, Share2 } from "lucide-react";
+import toast from "react-hot-toast";
+import { useState } from "react";
 
-export default function DownloadSection() {
+interface DownloadData {
+    filename: string;
+    blob: Blob;
+    requestId: string;
+}
+
+interface Props {
+    downloadData: DownloadData;
+}
+
+export default function DownloadSection({ downloadData }: Props) {
+    const [baseFileName, setBaseFileName] = useState(downloadData.filename.replace('.apkg', ''));
+
+    const fullFileName = `${baseFileName}.apkg`;
+
+    const handleDownload = () => {
+        const url = window.URL.createObjectURL(downloadData.blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fullFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -42,7 +69,7 @@ export default function DownloadSection() {
                 {/* File info */}
                 <div className="mb-6 p-3 bg-white/50 rounded-lg inline-block">
                     <p className="text-sm text-[#767676]">
-                        Package: MyNotes.apkg (2.3 MB)
+                        Package: MyNotes.apkg
                     </p>
                 </div>
 
@@ -54,10 +81,7 @@ export default function DownloadSection() {
                         className="bg-[#3A7DFF] hover:bg-[#316BDF] text-white px-8 py-3 rounded-lg 
                      flex items-center gap-2 font-medium transition-colors shadow-lg 
                      shadow-blue-500/20"
-                        onClick={() => {
-                            // TODO: Implement actual download
-                            alert("Download functionality will be implemented");
-                        }}
+                        onClick={handleDownload}
                     >
                         <Download className="w-5 h-5" />
                         Download Now
@@ -67,12 +91,13 @@ export default function DownloadSection() {
                         className="text-[#2C2C2C] hover:text-[#316BDF] transition-colors 
                      flex items-center gap-2 text-sm"
                         onClick={() => {
-                            // TODO: Implement sharing functionality
-                            alert("Share functionality will be implemented");
+                            navigator.clipboard.writeText(window.location.href)
+                                .then(() => toast.success("Copied link to clipboard - thanks for sharing 🎉"))
+                                .catch(() => toast.error("Oops, something went wrong"));
                         }}
                     >
                         <Share2 className="w-4 h-4" />
-                        Share with others
+                        Share this website
                     </button>
                 </div>
             </motion.div>

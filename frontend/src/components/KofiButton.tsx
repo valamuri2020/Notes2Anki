@@ -3,7 +3,7 @@ export default function KofiButton() {
     return (
         <div className="fixed bottom-6 right-6">
             <a
-                href="https://ko-fi.com/YOUR_KOFI_USERNAME"
+                href="https://ko-fi.com/vivekalamuri"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-[#3A7DFF] hover:bg-[#316BDF] text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors"

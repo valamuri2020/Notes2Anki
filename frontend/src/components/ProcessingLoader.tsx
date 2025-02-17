@@ -58,7 +58,7 @@ export default function ProcessingLoader() {
                     Converting your notes
                 </p>
                 <p className="text-sm text-[#767676] mt-2">
-                    Grab a coffee while we prepare your flashcards ☕️
+                    Grab some coffee...this might take a few minutes ☕️
                 </p>
             </motion.div>
         </div>

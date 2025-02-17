@@ -93,10 +93,12 @@ export default function FileUpload({ files, setFiles }: FileUploadProps) {
                     <p className="text-sm text-[#767676] mt-4">
                         Supports PDF, PPT, DOC, TXT (max {MAX_FILE_SIZE / 1024 / 1024}MB per file)
                     </p>
-                    <p className="text-sm text-[#767676]">
-                        {files.length}/{MAX_FILES} files uploaded
-                    </p>
                 </motion.div>
+                {files.length > 0 && (
+                    <div className="absolute bottom-3 right-3 text-sm text-[#767676]">
+                        {files.length}/{MAX_FILES}
+                    </div>
+                )}
             </div>
 
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">

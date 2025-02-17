@@ -1,7 +1,8 @@
-// src/app/page.tsx
 "use client";
 
 import { useState } from "react";
+import { Check, Download, Share2 } from "lucide-react";
+import { Toaster, toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import FileUpload from "@/components/FileUpload";
 import Header from "@/components/Header";
@@ -9,27 +10,63 @@ import CreativeLoader from "@/components/ProcessingLoader";
 import DownloadSection from "@/components/DownloadSection";
 import KofiButton from "@/components/KofiButton";
 
+interface DownloadData {
+  filename: string;
+  blob: Blob;
+  requestId: string;
+}
+
 export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDownloadReady, setIsDownloadReady] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [downloadData, setDownloadData] = useState<DownloadData | null>(null);
 
   const handleSubmit = async () => {
     if (files.length === 0) return;
 
     setIsProcessing(true);
-    // TODO: Implement actual file processing
-    // Simulating processing time for demo
-    setTimeout(() => {
+
+    try {
+      const formData = new FormData();
+      files.forEach((file) => formData.append("files", file));
+
+      // TODO: filename can be user specified...not for v0
+      const requestData = {
+        id: crypto.randomUUID(),
+        anki_filename: "MyNotes"
+      };
+
+      formData.append("request", JSON.stringify(requestData));
+
+      const response = await fetch("http://localhost:8000/generate", {
+        method: "POST",
+        body: formData,
+      });
+
+      const blob = await response.blob();
+      const requestId = response.headers.get("X-Request-ID");
+
+      setDownloadData({
+        filename: "MyNotes",
+        blob,
+        requestId: requestId || ""
+      });
+
       setIsProcessing(false);
       setIsDownloadReady(true);
-    }, 10000);
+    } catch (error) {
+      console.error("Error generating deck:", error);
+      setIsProcessing(false);
+      setIsDownloadReady(false);
+      alert("Error generating deck. Please try again later.");
+    }
   };
 
   return (
-    <main className="min-h-screen px-4 py-8">
+    <main className="min-h-screen px-4 py-16">
+      <div><Toaster position="top-right" reverseOrder={false} /></div>
       <Header />
-
       <div className="max-w-4xl mx-auto mt-16">
         <AnimatePresence mode="wait">
           {!isProcessing && !isDownloadReady && (
@@ -56,7 +93,7 @@ export default function Home() {
                   onClick={handleSubmit}
                   disabled={files.length === 0}
                 >
-                  Generate Flashcards
+                  Generate Deck ⚡️
                 </motion.button>
               </div>
             </motion.div>
@@ -74,13 +111,17 @@ export default function Home() {
             </motion.div>
           )}
 
-          {isDownloadReady && (
-            <DownloadSection />
+          {isDownloadReady && downloadData && (
+            <DownloadSection downloadData={downloadData} />
           )}
         </AnimatePresence>
       </div>
 
       <KofiButton />
+
+      <footer className="mt-16 text-center text-sm text-gray-500">
+        <p>No data is permanently stored. Made with ❤️. © {new Date().getFullYear()} Vivek Alamuri.</p>
+      </footer>
     </main>
   );
 }
