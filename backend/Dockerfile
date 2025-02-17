@@ -40,6 +40,9 @@ RUN mkdir -p /app/tmp
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH=/app
 
+# Download models
+RUN docling-tools models download
+
 # Expose port
 EXPOSE 8000
 
@@ -68,6 +71,9 @@ RUN mkdir -p /app/tmp
 # Set environment variables
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH=/app
+
+# Download models
+RUN docling-tools models download
 
 # Expose port
 EXPOSE 8000
