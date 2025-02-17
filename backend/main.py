@@ -1,10 +1,10 @@
 from fastapi import FastAPI, File, UploadFile, Form  # Import Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse
 from typing import List
 from pydantic import BaseModel
 from dotenv import load_dotenv
-import json  # Import json
+import json
 
 from services.file_processor import FileProcessor
 from services.anki_generator import AnkiDeckInterface
@@ -40,17 +40,14 @@ class GenerateRequest(BaseModel):
 # Response model
 class GenerateResponse(BaseModel):
     id: str
-    anki_file_url: str
 
 
-@app.post("/generate", response_model=GenerateResponse)
+@app.post("/generate")
 async def generate_flashcards(
-    request: str = Form(...),  # Expect 'request' as a form field
+    request: str = Form(...),
     files: List[UploadFile] = File(...),
 ):
-    # Parse the JSON string from the form field into a dictionary
     request_data = json.loads(request)
-    # Manually create a GenerateRequest object from the dictionary
     generate_request = GenerateRequest(**request_data)
 
     validator.validate_file_count(files)
@@ -66,19 +63,20 @@ async def generate_flashcards(
 
         all_cards[file.filename] = cards
 
-    # Generate Anki package
     generator = AnkiDeckInterface()
+
     anki_file_path = generator.generate_deck(
         all_cards,
         generate_request.anki_filename,
-    )  # Use generate_request
+    )
 
-    # TODO: do this properly
-    # Generate download URL
-    # download_url = f"{settings.BASE_URL}/downloads/{anki_file_path}"
-    download_url = ""
-    return GenerateResponse(
-        id=generate_request.id, anki_file_url=download_url  # Use generate_request
+    headers = {"X-Request-ID": generate_request.id}
+
+    return FileResponse(
+        path=anki_file_path,
+        filename=generate_request.anki_filename,
+        media_type="application/apkg",
+        headers=headers,
     )
 
 
