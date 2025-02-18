@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Download, Share2 } from "lucide-react";
-import { Toaster, toast } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import FileUpload from "@/components/FileUpload";
 import Header from "@/components/Header";
@@ -39,7 +38,7 @@ export default function Home() {
 
       formData.append("request", JSON.stringify(requestData));
 
-      const response = await fetch("http://localhost:8000/generate", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/generate`, {
         method: "POST",
         body: formData,
       });

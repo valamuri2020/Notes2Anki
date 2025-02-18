@@ -2,7 +2,6 @@
 import { motion } from "framer-motion";
 import { Check, Download, Share2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { useState } from "react";
 
 interface DownloadData {
     filename: string;
@@ -15,9 +14,7 @@ interface Props {
 }
 
 export default function DownloadSection({ downloadData }: Props) {
-    const [baseFileName, setBaseFileName] = useState(downloadData.filename.replace('.apkg', ''));
-
-    const fullFileName = `${baseFileName}.apkg`;
+    const fullFileName = downloadData.filename;
 
     const handleDownload = () => {
         const url = window.URL.createObjectURL(downloadData.blob);
