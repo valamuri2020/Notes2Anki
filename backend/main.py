@@ -5,7 +5,7 @@ from typing import List
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import json
-
+import docling
 from services.file_processor import FileProcessor
 from services.anki_generator import AnkiDeckInterface
 from services.validator import Validator
@@ -13,6 +13,7 @@ from services.card_creator import LLMCardCreator
 from config import Settings
 
 load_dotenv()
+
 
 app = FastAPI(title="Notes2Anki API")
 settings = Settings()

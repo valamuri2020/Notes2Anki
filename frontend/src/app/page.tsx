@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import CreativeLoader from "@/components/ProcessingLoader";
 import DownloadSection from "@/components/DownloadSection";
 import KofiButton from "@/components/KofiButton";
+import { API_URL } from "@/lib/constants";
 
 interface DownloadData {
   filename: string;
@@ -33,12 +34,13 @@ export default function Home() {
       // TODO: filename can be user specified...not for v0
       const requestData = {
         id: crypto.randomUUID(),
-        anki_filename: "MyNotes"
+        anki_filename: "MyNotes.apkg"
       };
 
       formData.append("request", JSON.stringify(requestData));
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/generate`, {
+      console.log("API_URL: ", API_URL);
+      const response = await fetch(`${API_URL}/generate`, {
         method: "POST",
         body: formData,
       });
@@ -47,7 +49,7 @@ export default function Home() {
       const requestId = response.headers.get("X-Request-ID");
 
       setDownloadData({
-        filename: "MyNotes",
+        filename: "MyNotes.apkg",
         blob,
         requestId: requestId || ""
       });

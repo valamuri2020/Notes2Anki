@@ -28,6 +28,9 @@ class AnkiDeckInterface:
     def generate_deck(
         self, all_cards: Dict[str, List[Card]], deck_name: str, output_dir="./tmp"
     ) -> str:
+        deck_name = deck_name.split(".apkg")[0] if ".apkg" in deck_name else deck_name
+
+        print("Deck Name: ", deck_name)
 
         deck = genanki.Deck(deck_id=random.randrange(1 << 30, 1 << 31), name=deck_name)
 

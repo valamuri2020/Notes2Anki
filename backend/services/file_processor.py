@@ -12,6 +12,8 @@ class FileProcessor:
         self.validator = Validator(self.settings)
 
     def _extract_content(self, file: UploadFile) -> str:
+        if file.filename.endswith(".txt"):
+            return file.file.read()
         try:
             # Create a temporary file to store the uploaded content
             with tempfile.NamedTemporaryFile(delete=False) as temp_file:

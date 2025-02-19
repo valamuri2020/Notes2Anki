@@ -13,7 +13,7 @@ export default function Header() {
                 Notes2Anki
             </h1>
             <p className="mt-6 text-xl text-[#767676] max-w-2xl mx-auto leading-relaxed">
-                Turn your slides into Anki cards. Built-in citations. No hidden limits.
+                Turn your slides into Anki cards. Built-in citations. No clutter.
             </p>
         </motion.header>
     );
