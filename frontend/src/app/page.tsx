@@ -9,6 +9,7 @@ import CreativeLoader from "@/components/ProcessingLoader";
 import DownloadSection from "@/components/DownloadSection";
 import KofiButton from "@/components/KofiButton";
 import { API_URL } from "@/lib/constants";
+import { toast } from "react-hot-toast";
 
 interface DownloadData {
   filename: string;
@@ -45,6 +46,10 @@ export default function Home() {
         body: formData,
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const blob = await response.blob();
       const requestId = response.headers.get("X-Request-ID");
 
@@ -57,16 +62,16 @@ export default function Home() {
       setIsProcessing(false);
       setIsDownloadReady(true);
     } catch (error) {
-      console.error("Error generating deck:", error);
+      console.error("Error generating deck:", );
       setIsProcessing(false);
       setIsDownloadReady(false);
-      alert("Error generating deck. Please try again later.");
+      toast.error("Oops, there was an error: " + error);
     }
   };
 
   return (
     <main className="min-h-screen px-4 py-16">
-      <div><Toaster position="top-right" reverseOrder={false} /></div>
+      <Toaster />
       <Header />
       <div className="max-w-4xl mx-auto mt-16">
         <AnimatePresence mode="wait">
@@ -96,6 +101,11 @@ export default function Home() {
                 >
                   Generate Deck ⚡️
                 </motion.button>
+              </div>
+              <div className="mt-9 p-2 border-2 border-dotted border-orange-500 rounded-lg bg-orange-100 text-center max-w-md mx-auto">
+                <p className="text-orange-800 text-sm">
+                  This website is in alpha testing, stuff might break, please be patient. It's my first time :)
+                </p>
               </div>
             </motion.div>
           )}

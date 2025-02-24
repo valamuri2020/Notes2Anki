@@ -3,6 +3,7 @@ import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Upload, FileText, FileType2, Presentation } from "lucide-react";
 import { MAX_FILES, MAX_FILE_SIZE } from "@/lib/constants";
+import { toast } from "react-hot-toast"; // Only import toast function
 
 interface FileUploadProps {
     files: File[];
@@ -25,18 +26,20 @@ const getFileIcon = (fileName: string) => {
 export default function FileUpload({ files, setFiles }: FileUploadProps) {
     const onDrop = useCallback((acceptedFiles: File[]) => {
         if (files.length >= MAX_FILES) {
-            alert(`Maximum ${MAX_FILES} files allowed`);
+            toast.error(`Maximum ${MAX_FILES} files allowed`);
             return;
         }
 
         // Filter out duplicates and files that exceed size limit
         const newFiles = acceptedFiles.filter(file => {
             if (file.size > MAX_FILE_SIZE) {
-                alert(`File ${file.name} exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`);
+                toast.error(`File ${file.name} exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`, {
+                    position: 'top-center'
+                });
                 return false;
             }
             if (files.some(existingFile => existingFile.name === file.name)) {
-                alert(`File ${file.name} has already been added`);
+                toast.error(`File ${file.name} has already been added`);
                 return false;
             }
             return true;
@@ -53,8 +56,7 @@ export default function FileUpload({ files, setFiles }: FileUploadProps) {
             'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
             'text/plain': ['.txt']
-        },
-        maxSize: MAX_FILE_SIZE
+        }
     });
 
     const removeFile = (name: string) => {

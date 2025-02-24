@@ -4,7 +4,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Docs2Anki - Turn your notes into flashcards",
+  title: "Notes2Anki - Turn your notes into flashcards",
   description: "Convert your study materials into Anki flashcards automatically",
 };
 
