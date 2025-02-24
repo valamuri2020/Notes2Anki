@@ -127,7 +127,7 @@ export default function Home() {
                   </div>
                   <div className="mt-9 p-2 border-2 border-dotted border-orange-500 rounded-lg bg-orange-100 text-center max-w-md mx-auto">
                     <p className="text-orange-800 text-sm">
-                      This website is in alpha testing, stuff might break, please be patient. It's my first time :)
+                      This website is in alpha testing, stuff might break, please be patient. It&apos;s my first time.
                     </p>
                   </div>
                 </motion.div>
