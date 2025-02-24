@@ -69,7 +69,7 @@ export default function DownloadSection({ downloadData }: Props) {
                 {/* File info */}
                 <div className="mb-6 p-3 bg-white/50 rounded-lg inline-block">
                     <p className="text-sm text-[#767676]">
-                        Package: MyNotes.apkg
+                        Package: {fullFileName}
                     </p>
                 </div>
 
