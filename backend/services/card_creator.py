@@ -39,10 +39,12 @@ class Prompts:
     Do not miss any *key concepts*. It is better to include an extra flashcard if you are unsure.
 
     Make sure each flashcard is self-contained, it should make sense if I pick it up on its own. References to other parts of the content that don't make sense without context are not suitable for flashcard-style learning. 
-    
+
     All information in the flashcards MUST come from the provided content enclosed in <content></content> tags. This is absolutely imperative and please do no hallucinate!
 
-    Return an array of objects in JSON format, with each object having with the keys "id", "concept", "description".
+    There may be <diagram></diagram> tags within the provided content. This represents a text summary of any images, charts, diagrams etc. There may be important material here so pay close attention. If a flashcard comes from content in a <diagram></diagram> tag, add '(from an image)' to the end of the description.
+
+    Return an array of objects in JSON format, with each object having with the keys "id", "concept", "description". 
 
     <content>
     {}

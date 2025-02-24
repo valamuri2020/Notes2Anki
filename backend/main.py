@@ -5,23 +5,21 @@ from typing import List
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import json
-import docling
 from services.file_processor import FileProcessor
 from services.anki_generator import AnkiDeckInterface
 from services.validator import Validator
 from services.card_creator import LLMCardCreator
 from config import Settings
+from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()
-
 
 app = FastAPI(title="Notes2Anki API")
 settings = Settings()
 validator = Validator(settings)
 processor = FileProcessor(settings)
 
-origins = ["http://localhost:3000"]
-
+origins = ["http://localhost:3000", "https://www.notes2anki.com"]
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
@@ -54,15 +52,20 @@ async def generate_flashcards(
     validator.validate_file_count(files)
 
     all_cards = {}
-    for file in files:
-        # Process files
-        file_contents = processor.process_file(file)
 
-        # Use LLM to create cards
+    def process_single_file(file):
+        file_contents = processor.process_file(file)
         creator = LLMCardCreator()
         cards = creator.create_cards(file_contents)
+        return file.filename, cards
 
-        all_cards[file.filename] = cards
+    with ThreadPoolExecutor() as executor:
+        # Process files in parallel
+        future_results = [executor.submit(process_single_file, file) for file in files]
+        # Collect results
+        for future in future_results:
+            filename, cards = future.result()
+            all_cards[filename] = cards
 
     generator = AnkiDeckInterface()
 

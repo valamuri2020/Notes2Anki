@@ -14,13 +14,16 @@ RUN poetry config virtualenvs.in-project true
 # Install dependencies; use compile to convert Python to bytecode upon install instead of first run
 RUN poetry install --without dev --no-root --compile
 
+# Download models
+RUN poetry run docling-tools models download
+
 # Development stage
 FROM python:3.11-slim AS development
 
 # Copy virtual environment from builder
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/poetry.lock /app/poetry.lock
-COPY --from=builder /app/pyproject.toml /app/pyproject.toml
+COPY --from=builder /root/.cache/docling/models /root/.cache/docling/models
 
 # Set working directory
 WORKDIR /app
@@ -32,7 +35,6 @@ COPY services/validator.py /app/services/
 COPY services/file_processor.py /app/services/
 COPY services/anki_generator.py /app/services/
 COPY services/card_creator.py /app/services/
-COPY .env /app/
 
 # Create directory for temporary files
 RUN mkdir -p /app/tmp
