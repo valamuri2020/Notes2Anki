@@ -17,9 +17,9 @@ export default function DeckNameInput({ deckName, setDeckName }: DeckNameInputPr
       animate={{ opacity: 1, y: 0 }}
       className="mt-6"
     >
-      {/* <label htmlFor="deckName" className="block text-sm font-medium text-[#767676] mb-2 ml-1">
+      <label htmlFor="deckName" className="block text-sm font-medium text-[#767676] mb-2 ml-1">
         Deck Name
-      </label> */}
+      </label>
       <input
         id="deckName"
         type="text"

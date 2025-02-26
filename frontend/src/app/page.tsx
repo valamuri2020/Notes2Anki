@@ -90,10 +90,10 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen px-4 py-16">
+    <main className="min-h-screen px-4 sm:px-6 py-8 sm:py-16 flex flex-col">
       <Toaster />
       <Header />
-      <div className="max-w-4xl mx-auto mt-16">
+      <div className="max-w-4xl mx-auto mt-8 sm:mt-16 flex-grow w-full">
         <AnimatePresence mode="wait">
           {!isProcessing && !isDownloadReady && (
             <>
@@ -109,11 +109,11 @@ export default function Home() {
                     setFiles={setFiles}
                   />
 
-                  <div className="mt-8 flex justify-center">
+                  <div className="mt-6 sm:mt-8 flex justify-center">
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className={`px-8 py-3 rounded-lg text-white text-lg font-medium 
+                      className={`w-1/2 sm:w-auto px-6 sm:px-8 py-3 rounded-lg text-white text-base sm:text-lg font-medium 
                     transition-colors shadow-lg shadow-blue-500/20
                     ${files.length === 0
                           ? 'bg-neutral-400 cursor-not-allowed'
@@ -122,11 +122,11 @@ export default function Home() {
                       onClick={handleSubmit}
                       disabled={files.length === 0}
                     >
-                      Go ⚡️
+                      Next
                     </motion.button>
                   </div>
-                  <div className="mt-9 p-2 border-2 border-dotted border-orange-500 rounded-lg bg-orange-100 text-center max-w-md mx-auto">
-                    <p className="text-orange-800 text-sm">
+                  <div className="mt-6 sm:mt-9 p-2 border-2 border-dotted border-orange-500 rounded-lg bg-orange-100 text-center max-w-md mx-auto">
+                    <p className="text-orange-800 text-xs sm:text-sm">
                       This website is in alpha testing, stuff might break, please be patient. It&apos;s my first time.
                     </p>
                   </div>
@@ -136,29 +136,37 @@ export default function Home() {
               {deckNamePhase && (
                 <motion.div
                   key="deckname"
-                  // initial={{ x: "-4%", opacity: 0 }}
-                  // exit={{ x: "-10%", opacity: 0 }}
-                  // Tween transition (smooth)
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="flex flex-col items-center gap-4"
+                  className="flex flex-col items-center gap-4 px-4 sm:px-0 w-full max-w-md mx-auto"
                 >
-                  <input
-                    type="text"
-                    placeholder="Enter deck name..."
-                    value={deckName}
-                    onChange={(e) => setDeckName(e.target.value)}
-                    className="p-3 border rounded-lg w-full max-w-md"
-                  />
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="bg-[#3A7DFF] hover:bg-[#316BDF] text-white px-8 py-3 rounded-lg text-lg font-medium transition-colors shadow-lg shadow-blue-500/20"
-                    onClick={handleSubmit}
-                  >
-                    Generate Deck ⚡️
-                  </motion.button>
+                  <div className="w-full">
+                    <label 
+                      htmlFor="deckName" 
+                      className="block text-base sm:text-lg font-medium text-[#2C2C2C] mb-2"
+                    >
+                      Deck Name
+                    </label>
+                    <input
+                      id="deckName"
+                      type="text"
+                      placeholder="Enter deck name..."
+                      value={deckName}
+                      onChange={(e) => setDeckName(e.target.value)}
+                      className="p-3 border rounded-lg w-full text-base sm:text-lg"
+                    />
+                  </div>
+                  <div className="w-full flex justify-center mt-2">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="w-1/2 sm:w-auto bg-[#3A7DFF] hover:bg-[#316BDF] text-white px-6 sm:px-8 py-3 rounded-lg text-base sm:text-lg font-medium transition-colors shadow-lg shadow-blue-500/20"
+                      onClick={handleSubmit}
+                    >
+                      Generate Deck ⚡️
+                    </motion.button>
+                  </div>
                 </motion.div>
               )}
             </>
@@ -170,7 +178,7 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="glass-morphism rounded-xl p-12 flex justify-center"
+              className="glass-morphism rounded-xl p-6 sm:p-12 flex justify-center"
             >
               <CreativeLoader />
             </motion.div>
@@ -184,9 +192,9 @@ export default function Home() {
 
       <KofiButton />
 
-      <footer className="mt-16 text-center text-sm text-gray-500">
+      <footer className="w-full mt-auto pt-8 pb-4 text-center text-xs sm:text-sm text-gray-500">
         <p>No data is permanently stored. Made with ❤️. © {new Date().getFullYear()} Vivek Alamuri.</p>
       </footer>
-    </main >
+    </main>
   );
 }
