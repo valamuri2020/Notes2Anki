@@ -17,25 +17,12 @@ class FileProcessor(LoggerMixin):
         self.google_client = genai.Client(api_key=settings.GOOGLE_API_KEY)
 
     def _extract_content(self, file: UploadFile) -> str:
-        """
-        Extract text content from various file types.
-        
-        Args:
-            file: The uploaded file to process
-            
-        Returns:
-            str: The extracted text content
-            
-        Raises:
-            PDFProcessingError: If there's an error processing a PDF file
-            DocumentProcessingError: If there's an error processing other document types
-        """
         if file.filename.endswith(".txt"):
             self.logger.debug("Processing text file", extra={"extra_fields": {"filename": file.filename}})
             content = file.file.read()
             return content.decode()
             
-        if file.filename.endswith(".pdf"):
+        elif file.filename.endswith(".pdf"):
             self.logger.debug("Processing PDF file", extra={"extra_fields": {"filename": file.filename}})
             uploaded_file = None
             temp_file_path = None
@@ -88,54 +75,39 @@ class FileProcessor(LoggerMixin):
                 
                 if temp_file_path and os.path.exists(temp_file_path):
                     os.unlink(temp_file_path)
-
-        # Handle other document types
-        self.logger.debug("Processing document using DocumentConverter", extra={"extra_fields": {"filename": file.filename}})
-        temp_file_path = None
         
-        try:
-            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-                temp_file_path = temp_file.name
-                content = file.file.read()
-                temp_file.write(content)
-                temp_file.flush()
-
-                converter = DocumentConverter()
-                res = converter.convert(temp_file.name)
-                return res.document.export_to_markdown()
-                
-        except Exception as e:
-            details = {
-                "filename": file.filename,
-                "error": str(e)
-            }
-            self.logger.error(
-                "Error processing document",
-                extra={"extra_fields": details}
-            )
-            raise DocumentProcessingError("Failed to process document", details=details)
+        else:
+            # Handle other document types
+            self.logger.debug("Processing document using DocumentConverter", extra={"extra_fields": {"filename": file.filename}})
+            temp_file_path = None
             
-        finally:
-            if temp_file_path and os.path.exists(temp_file_path):
-                os.unlink(temp_file_path)
+            try:
+                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                    temp_file_path = temp_file.name
+                    content = file.file.read()
+                    temp_file.write(content)
+                    temp_file.flush()
+
+                    converter = DocumentConverter()
+                    res = converter.convert(temp_file.name)
+                    return res.document.export_to_markdown()
+                    
+            except Exception as e:
+                details = {
+                    "filename": file.filename,
+                    "error": str(e)
+                }
+                self.logger.error(
+                    "Error processing document",
+                    extra={"extra_fields": details}
+                )
+                raise DocumentProcessingError("Failed to process document", details=details)
+                
+            finally:
+                if temp_file_path and os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
 
     def process_file(self, file: UploadFile, is_store_processed_content=os.getenv("IS_LOCAL_MODE", False), processed_content_dir="processed_content/") -> str:
-        """
-        Process an uploaded file and extract its content.
-        
-        Args:
-            file: The uploaded file to process
-            is_store_processed_content: Whether to store the processed content
-            processed_content_dir: Directory to store processed content
-            
-        Returns:
-            str: The extracted text content
-            
-        Raises:
-            FileValidationError: If file validation fails
-            PDFProcessingError: If there's an error processing a PDF file
-            DocumentProcessingError: If there's an error processing other document types
-        """
         self.logger.info(
             "Starting file processing",
             extra={

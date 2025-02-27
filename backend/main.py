@@ -114,6 +114,25 @@ async def general_exception_handler(request: Request, exc: Exception):
         }
     )
 
+@app.exception_handler(FileValidationError)
+async def file_validation_exception_handler(request: Request, exc: FileValidationError):
+    """Handle file validation errors (e.g., invalid file type)"""
+    app_logger.error(
+        "File validation error",
+        extra={
+            "extra_fields": {
+                "url": str(request.url),
+                "method": request.method,
+                "error": str(exc),
+                "details": exc.details
+            }
+        }
+    )
+    return JSONResponse(
+        status_code=400,
+        content={"detail": str(exc)}
+    )
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
@@ -148,8 +167,21 @@ async def generate_flashcards(
     request: str = Form(...),
     files: List[UploadFile] = File(...),
 ):
-    request_data = json.loads(request)
-    generate_request = GenerateRequest(**request_data)
+    try:
+        request_data = json.loads(request)
+        generate_request = GenerateRequest(**request_data)
+    except json.JSONDecodeError as e:
+        raise RequestValidationError([{
+            "loc": ["body", "request"],
+            "msg": "Invalid JSON",
+            "type": "json_decode_error"
+        }])
+    except Exception as e:
+        raise RequestValidationError([{
+            "loc": ["body", "request"],
+            "msg": str(e),
+            "type": "validation_error"
+        }])
     
     app_logger.info(
         "Starting flashcard generation",
@@ -164,6 +196,11 @@ async def generate_flashcards(
 
     # All validation and processing errors are handled by exception handlers
     validator.validate_file_count(files)
+    
+    # Validate file extensions
+    for file in files:
+        validator.validate_file_ext(file)
+        
     all_cards = {}
 
     def process_single_file(file):

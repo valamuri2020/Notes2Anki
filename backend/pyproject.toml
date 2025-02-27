@@ -15,6 +15,10 @@ cohere = "^5.13.12"
 python-multipart = "^0.0.20"
 python-dotenv = "^1.0.1"
 google-genai = "^1.2.0"
+pytest = "^8.3.4"
+pytest-mock = "^3.14.0"
+httpx = "^0.28.1"
+pytest-asyncio = "^0.25.3"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -25,3 +29,7 @@ mypy = "^1.15.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
