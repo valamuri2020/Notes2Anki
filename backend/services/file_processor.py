@@ -1,34 +1,59 @@
-from fastapi import UploadFile, HTTPException
+from fastapi import UploadFile
 from docling.document_converter import DocumentConverter
 import tempfile
 import os
 from config import Settings
 from services.validator import Validator
 from google import genai
+from services.logger import LoggerMixin
+from services.exceptions import PDFProcessingError, DocumentProcessingError
 
 
-class FileProcessor:
+class FileProcessor(LoggerMixin):
     def __init__(self, settings: Settings):
+        super().__init__()
         self.settings = settings
         self.validator = Validator(self.settings)
         self.google_client = genai.Client()
 
     def _extract_content(self, file: UploadFile) -> str:
+        """
+        Extract text content from various file types.
+        
+        Args:
+            file: The uploaded file to process
+            
+        Returns:
+            str: The extracted text content
+            
+        Raises:
+            PDFProcessingError: If there's an error processing a PDF file
+            DocumentProcessingError: If there's an error processing other document types
+        """
         if file.filename.endswith(".txt"):
+            self.logger.debug("Processing text file", extra={"extra_fields": {"filename": file.filename}})
             content = file.file.read()
             return content.decode()
-        elif file.filename.endswith(".pdf"):
+            
+        if file.filename.endswith(".pdf"):
+            self.logger.debug("Processing PDF file", extra={"extra_fields": {"filename": file.filename}})
+            uploaded_file = None
+            temp_file_path = None
+            
             try:
-                # Upload using the File API
+                # Create temporary file
                 with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                    temp_file_path = temp_file.name
                     content = file.file.read()
                     temp_file.write(content)
                     temp_file.flush()
+                    
+                    self.logger.debug("Uploading PDF to Google API")
                     uploaded_file = self.google_client.files.upload(
                         file=temp_file.name, config=dict(mime_type="application/pdf")
                     )
-                os.unlink(temp_file.name)  # Clean up the temporary file
 
+                self.logger.debug("Generating content from PDF using Gemini")
                 response = self.google_client.models.generate_content(
                     model="gemini-1.5-flash",
                     contents=[
@@ -37,50 +62,139 @@ class FileProcessor:
                     ],
                 )
                 return response.text
-
+                
             except Exception as e:
-                raise HTTPException(
-                    status_code=500, detail=f"Error processing file: {str(e)}"
+                details = {
+                    "filename": file.filename,
+                    "error": str(e)
+                }
+                self.logger.error(
+                    "Error processing PDF file",
+                    extra={"extra_fields": details}
                 )
-        else:
-            try:
-                # Create a temporary file to store the uploaded content
-                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-                    # Write the uploaded file content to the temp file
-                    content = file.file.read()
-                    temp_file.write(content)
-                    temp_file.flush()
-
-                    # Use DocumentConverter to extract text
-                    converter = DocumentConverter()
-                    res = converter.convert(temp_file.name)
-                    extracted_text = res.document.export_to_markdown()
-
-                    return extracted_text
-            except Exception as e:
-                raise HTTPException(
-                    status_code=500, detail=f"Error processing file: {str(e)}"
-                )
+                raise PDFProcessingError("Failed to process PDF file", details=details)
+                
             finally:
-                # Clean up the temporary file
-                if "temp_file" in locals():
-                    os.unlink(temp_file.name)
+                # Clean up resources
+                if uploaded_file:
+                    try:
+                        self.logger.debug("Cleaning up Google API uploaded file")
+                        self.google_client.files.delete(name=uploaded_file.name)
+                    except Exception as e:
+                        self.logger.warning(
+                            "Failed to clean up Google API file",
+                            extra={"extra_fields": {"error": str(e)}}
+                        )
+                
+                if temp_file_path and os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
 
-    def process_file(self, file: UploadFile, processed_content_dir="mock_data/") -> str:
-        print("Validating file type and size")
+        # Handle other document types
+        self.logger.debug("Processing document using DocumentConverter", extra={"extra_fields": {"filename": file.filename}})
+        temp_file_path = None
+        
+        try:
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                temp_file_path = temp_file.name
+                content = file.file.read()
+                temp_file.write(content)
+                temp_file.flush()
+
+                converter = DocumentConverter()
+                res = converter.convert(temp_file.name)
+                return res.document.export_to_markdown()
+                
+        except Exception as e:
+            details = {
+                "filename": file.filename,
+                "error": str(e)
+            }
+            self.logger.error(
+                "Error processing document",
+                extra={"extra_fields": details}
+            )
+            raise DocumentProcessingError("Failed to process document", details=details)
+            
+        finally:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+
+    def process_file(self, file: UploadFile, is_store_processed_content=os.getenv("IS_LOCAL_MODE", False), processed_content_dir="processed_content/") -> str:
+        """
+        Process an uploaded file and extract its content.
+        
+        Args:
+            file: The uploaded file to process
+            is_store_processed_content: Whether to store the processed content
+            processed_content_dir: Directory to store processed content
+            
+        Returns:
+            str: The extracted text content
+            
+        Raises:
+            FileValidationError: If file validation fails
+            PDFProcessingError: If there's an error processing a PDF file
+            DocumentProcessingError: If there's an error processing other document types
+        """
+        self.logger.info(
+            "Starting file processing",
+            extra={
+                "extra_fields": {
+                    "filename": file.filename,
+                    "store_processed_content": is_store_processed_content
+                }
+            }
+        )
+
+        # Validate file
         self.validator.validate_file_ext(file)
         self.validator.validate_file_size(file)
 
-        print("Extracting file content")
+        # Extract content
         text = self._extract_content(file)
 
-        os.makedirs(processed_content_dir, exist_ok=True)
-        output_path = os.path.join(
-            processed_content_dir, "_".join(file.filename.split(".")) + ".md"
-        )
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(text)
+        # Store processed content if requested
+        if is_store_processed_content:
+            os.makedirs(processed_content_dir, exist_ok=True)
+            output_path = os.path.join(
+                processed_content_dir, "_".join(file.filename.split(".")) + ".md"
+            )
+            
+            self.logger.debug(
+                "Storing processed content",
+                extra={
+                    "extra_fields": {
+                        "filename": file.filename,
+                        "output_path": output_path
+                    }
+                }
+            )
+            
+            try:
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write(text)
+            except Exception as e:
+                self.logger.error(
+                    "Failed to store processed content",
+                    extra={
+                        "extra_fields": {
+                            "filename": file.filename,
+                            "output_path": output_path,
+                            "error": str(e)
+                        }
+                    }
+                )
+                # Don't raise here as this is not critical to the main functionality
 
+        self.logger.info(
+            "File processing completed",
+            extra={
+                "extra_fields": {
+                    "filename": file.filename,
+                    "content_length": len(text)
+                }
+            }
+        )
         return text
 
 
@@ -100,8 +214,6 @@ if __name__ == "__main__":
 
     # use same interface as server to process file
     upload_file = UploadFile(file=io.BytesIO(file_content), filename=filename)
-
-    print("Created UploadFile")
 
     settings = Settings()
     processor = FileProcessor(settings)

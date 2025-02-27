@@ -1,6 +1,7 @@
-from fastapi import FastAPI, File, UploadFile, Form  # Import Form
+from fastapi import FastAPI, File, UploadFile, Form, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.exceptions import RequestValidationError
 from typing import List
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -9,8 +10,18 @@ from services.file_processor import FileProcessor
 from services.anki_generator import AnkiDeckInterface
 from services.validator import Validator
 from services.card_creator import LLMCardCreator
+from services.logger import app_logger, LoggerMixin
+from services.exceptions import (
+    ValidationError,
+    FileValidationError,
+    ProcessingError,
+    LLMError,
+    AnkiError,
+    Notes2AnkiError,
+)
 from config import Settings
 from concurrent.futures import ThreadPoolExecutor
+import time
 
 load_dotenv()
 
@@ -20,6 +31,7 @@ validator = Validator(settings)
 processor = FileProcessor(settings)
 
 origins = ["http://localhost:3000", "https://www.notes2anki.com"]
+
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
@@ -29,17 +41,107 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Handle validation errors (e.g., missing required fields)"""
+    app_logger.error(
+        "Validation error",
+        extra={
+            "extra_fields": {
+                "url": str(request.url),
+                "method": request.method,
+                "errors": exc.errors()
+            }
+        }
+    )
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()}
+    )
+
+@app.exception_handler(Notes2AnkiError)
+async def notes2anki_error_handler(request: Request, exc: Notes2AnkiError):
+    """Handle all Notes2Anki application errors"""
+    # Map exception types to status codes
+    status_codes = {
+        ValidationError: 400,
+        ProcessingError: 500,
+        LLMError: 500,
+        AnkiError: 500
+    }
+    
+    status_code = status_codes.get(type(exc), 500)
+    
+    app_logger.error(
+        f"{type(exc).__name__} occurred",
+        extra={
+            "extra_fields": {
+                "url": str(request.url),
+                "method": request.method,
+                "error": str(exc),
+                "error_type": type(exc).__name__,
+                "details": getattr(exc, "details", None)
+            }
+        }
+    )
+    
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "detail": str(exc),
+            "details": getattr(exc, "details", None)
+        }
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handle any unhandled exceptions"""
+    app_logger.error(
+        "Unhandled error",
+        extra={
+            "extra_fields": {
+                "url": str(request.url),
+                "method": request.method,
+                "error": str(exc),
+                "error_type": type(exc).__name__
+            }
+        }
+    )
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "An internal server error occurred. Please try again later."
+        }
+    )
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = (time.time() - start_time) * 1000
+    
+    app_logger.info(
+        "Request processed",
+        extra={
+            "extra_fields": {
+                "method": request.method,
+                "url": str(request.url),
+                "client_host": request.client.host,
+                "process_time_ms": round(process_time, 2),
+                "status_code": response.status_code
+            }
+        }
+    )
+    return response
 
 # Request model
 class GenerateRequest(BaseModel):
     id: str
     anki_filename: str
 
-
 # Response model
 class GenerateResponse(BaseModel):
     id: str
-
 
 @app.post("/generate")
 async def generate_flashcards(
@@ -48,15 +150,39 @@ async def generate_flashcards(
 ):
     request_data = json.loads(request)
     generate_request = GenerateRequest(**request_data)
+    
+    app_logger.info(
+        "Starting flashcard generation",
+        extra={
+            "extra_fields": {
+                "request_id": generate_request.id,
+                "anki_filename": generate_request.anki_filename,
+                "file_count": len(files)
+            }
+        }
+    )
 
+    # All validation and processing errors are handled by exception handlers
     validator.validate_file_count(files)
-
     all_cards = {}
 
     def process_single_file(file):
+        app_logger.debug(
+            f"Processing file",
+            extra={"extra_fields": {"filename": file.filename}}
+        )
         file_contents = processor.process_file(file)
         creator = LLMCardCreator()
         cards = creator.create_cards(file_contents)
+        app_logger.debug(
+            f"File processed successfully",
+            extra={
+                "extra_fields": {
+                    "filename": file.filename,
+                    "cards_created": len(cards)
+                }
+            }
+        )
         return file.filename, cards
 
     with ThreadPoolExecutor() as executor:
@@ -64,18 +190,27 @@ async def generate_flashcards(
         future_results = [executor.submit(process_single_file, file) for file in files]
         # Collect results
         for future in future_results:
-            filename, cards = future.result()
+            filename, cards = future.result()  # Exceptions will be caught by handlers
             all_cards[filename] = cards
 
     generator = AnkiDeckInterface()
-
     anki_file_path = generator.generate_deck(
         all_cards,
         generate_request.anki_filename,
     )
 
-    headers = {"X-Request-ID": generate_request.id}
+    app_logger.info(
+        "Flashcard generation completed",
+        extra={
+            "extra_fields": {
+                "request_id": generate_request.id,
+                "total_files": len(files),
+                "total_cards": sum(len(cards) for cards in all_cards.values())
+            }
+        }
+    )
 
+    headers = {"X-Request-ID": generate_request.id}
     return FileResponse(
         path=anki_file_path,
         filename=generate_request.anki_filename,
@@ -83,8 +218,7 @@ async def generate_flashcards(
         headers=headers,
     )
 
-
 if __name__ == "__main__":
     import uvicorn
-
+    app_logger.info("Starting Notes2Anki API server")
     uvicorn.run(app, host="0.0.0.0", port=8000)

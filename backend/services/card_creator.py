@@ -3,6 +3,8 @@ from typing import List, Dict, Optional
 import cohere
 from pydantic import BaseModel
 import json
+from services.logger import LoggerMixin
+from services.exceptions import LLMAPIError, LLMResponseError
 
 
 class Prompts:
@@ -50,7 +52,6 @@ class Prompts:
     {}
     </content>
     """
-    # You are an expert tutor. Given all of this material, I want you to create 40 "flashcards" for the concepts in these documents. All information in the flashcards MUST come from the provided content enclosed in <content></content> tags. A flashcard is defined as a pair of concept -> description mapping with an ID. Keep the descriptions concise yet with sufficient detail. Return in JSON format with the keys "id", "concept", "description".
 
 
 class Card(BaseModel):
@@ -59,8 +60,9 @@ class Card(BaseModel):
     description: str
 
 
-class LLMCardCreator:
+class LLMCardCreator(LoggerMixin):
     def __init__(self):
+        super().__init__()
         self.cohere_client = cohere.ClientV2(api_key=os.getenv("COHERE_API_KEY"))
 
     def _keyword_deduplicate_file_content(self, text: str) -> str:
@@ -74,32 +76,66 @@ class LLMCardCreator:
         text: str,
         n_cards: Optional[int] = None,
         model: str = "command-r-plus-08-2024",
-    ) -> List[Dict[str, str]]:
+    ) -> List[Card]:
+        self.logger.info(
+            "Starting flashcard creation",
+            extra={
+                "extra_fields": {
+                    "content_length": len(text),
+                    "n_cards": n_cards,
+                    "model": model
+                }
+            }
+        )
+
         text = self._keyword_deduplicate_file_content(text)
         text = self._semantic_deduplicate_file_content(text)
 
-        print(f"Creating {'auto' if not n_cards else n_cards} cards with LLM")
+        self.logger.debug("Creating cards with Cohere LLM")
         prompt = (
             Prompts.CREATE_CARDS_AUTO.format(text)
             if not n_cards
             else Prompts.CREATE_CARDS_N.format(n_cards, text)
         )
 
-        response = self.cohere_client.chat(
-            model=model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": (prompt),
-                }
-            ],
-        )
+        try:
+            response = self.cohere_client.chat(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+            )
+        except Exception as e:
+            details = {
+                "model": model,
+                "error": str(e)
+            }
+            self.logger.error(
+                "Failed to get response from Cohere",
+                extra={"extra_fields": details}
+            )
+            raise LLMAPIError("Failed to generate cards", details=details)
 
         raw_cards = response.message.content[0].text
-        print(raw_cards)
-        cards_data = json.loads(raw_cards)
-        cards = [Card.model_validate(card) for card in cards_data]
+        self.logger.debug("Parsing card response")
+        
+        try:
+            cards_data = json.loads(raw_cards)
+            cards = [Card.model_validate(card) for card in cards_data]
+        except Exception as e:
+            details = {
+                "error": str(e),
+                "response_text": raw_cards
+            }
+            self.logger.error(
+                "Failed to parse model response",
+                extra={"extra_fields": details}
+            )
+            raise LLMResponseError("Failed to parse model response", details=details)
 
+        self.logger.info(
+            "Flashcard creation completed",
+            extra={"extra_fields": {"num_cards_created": len(cards)}}
+        )
+        
         return cards
 
 

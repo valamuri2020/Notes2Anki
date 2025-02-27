@@ -6,7 +6,7 @@ load_dotenv()
 
 client = genai.Client()
 
-long_context_pdf_path = "./mock_data/Psych 257_Anxiety & Obsession_W2025.pdf"
+long_context_pdf_path = "./mock_data/Psych 257_Anxiety & Obsession_W2025.pptx"
 
 # Upload the PDF using the File API
 sample_file = client.files.upload(
@@ -16,7 +16,7 @@ sample_file = client.files.upload(
 prompt_return_md = "Extract all the text in this document and return it as markdown"
 
 prompt_gen_cards = """
-You are an expert tutor preparing study materials. Given this material, create flashcards designed to help students learn the *key concepts*. 
+    You are an expert tutor preparing study materials. Given this material, create flashcards designed to help students learn the *key concepts*. 
     Focus on the fundamental ideas, principles, and topics that students need to understand to master the subject.
     It excludes administrative details, logistical information, course outlines, introductory remarks, summaries, or meta-discussions about the content itself.
 
@@ -50,4 +50,11 @@ response = client.models.generate_content(
         "Label each image/figure in this file and tell me the meaning",
     ],
 )
+
 print(response.text)
+print(sample_file.to_json_dict())
+
+delete_res = client.files.delete(name=sample_file.name)
+print(delete_res)
+
+client.files.list()

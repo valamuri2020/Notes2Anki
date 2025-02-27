@@ -1,15 +1,20 @@
 import os
 import genanki
 import random
-from typing import List, Dict, Optional
-from services.card_creator import Card, LLMCardCreator
+from typing import List, Dict
+from services.card_creator import Card
+from services.logger import LoggerMixin
+from services.exceptions import AnkiDeckGenerationError
 
 
-class AnkiDeckInterface:
+class AnkiDeckInterface(LoggerMixin):
     def __init__(self):
+        super().__init__()
         self.model = self._create_model()
 
     def _create_model(self):
+        """Create the Anki card model."""
+        self.logger.debug("Creating Anki model")
         card_model = genanki.Model(
             model_id=random.randrange(1 << 30, 1 << 31),  # Generate a random Model ID
             name="QA-Model",
@@ -28,25 +33,87 @@ class AnkiDeckInterface:
     def generate_deck(
         self, all_cards: Dict[str, List[Card]], deck_name: str, output_dir="./tmp"
     ) -> str:
+        self.logger.info(
+            "Starting Anki deck generation",
+            extra={
+                "extra_fields": {
+                    "deck_name": deck_name,
+                    "num_files": len(all_cards),
+                    "output_dir": output_dir
+                }
+            }
+        )
+
+        # Process deck name
         deck_name = deck_name.split(".apkg")[0] if ".apkg" in deck_name else deck_name
+        self.logger.debug(f"Processed deck name: {deck_name}")
 
-        print("Deck Name: ", deck_name)
-
+        # Create deck
         deck = genanki.Deck(deck_id=random.randrange(1 << 30, 1 << 31), name=deck_name)
 
+        # Add cards to deck
+        total_cards_added = 0
         for citation, cards in all_cards.items():
+            self.logger.debug(
+                "Processing cards from source",
+                extra={
+                    "extra_fields": {
+                        "source": citation,
+                        "num_cards": len(cards)
+                    }
+                }
+            )
+            
             for card in cards:
                 note = genanki.Note(
-                    model=self.model, fields=[card.concept, card.description, citation]
+                    model=self.model,
+                    fields=[card.concept, card.description, citation]
                 )
                 deck.add_note(note)
+                total_cards_added += 1
 
         # Save the deck
-        os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(output_dir, deck_name + ".apkg")
-        genanki.Package(deck).write_to_file(output_path)
-
-        return output_path
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, deck_name + ".apkg")
+            
+            self.logger.debug(
+                "Generating Anki package",
+                extra={
+                    "extra_fields": {
+                        "output_path": output_path,
+                        "total_cards": total_cards_added
+                    }
+                }
+            )
+            
+            genanki.Package(deck).write_to_file(output_path)
+            
+            self.logger.info(
+                "Anki deck generation completed successfully",
+                extra={
+                    "extra_fields": {
+                        "deck_name": deck_name,
+                        "total_cards": total_cards_added,
+                        "output_path": output_path
+                    }
+                }
+            )
+            
+            return output_path
+            
+        except Exception as e:
+            details = {
+                "deck_name": deck_name,
+                "output_dir": output_dir,
+                "total_cards": total_cards_added,
+                "error": str(e)
+            }
+            self.logger.error(
+                "Error generating Anki deck",
+                extra={"extra_fields": details}
+            )
+            raise AnkiDeckGenerationError("Failed to generate Anki deck", details=details)
 
 
 if __name__ == "__main__":
@@ -78,7 +145,7 @@ if __name__ == "__main__":
     card_creator = LLMCardCreator()
     cards = card_creator.create_cards(text=text, n_cards=None)
 
-    # all_cards = {filename: cards}
+    all_cards = {filename: cards}
 
-    # deck_creator = AnkiDeckInterface()
-    # deck_creator.generate_deck(all_cards, deck_name=filename.split(".")[0])
+    deck_creator = AnkiDeckInterface()
+    deck_creator.generate_deck(all_cards, deck_name=filename.split(".")[0])
