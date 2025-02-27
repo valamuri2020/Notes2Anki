@@ -14,7 +14,7 @@ class FileProcessor(LoggerMixin):
         super().__init__()
         self.settings = settings
         self.validator = Validator(self.settings)
-        self.google_client = genai.Client()
+        self.google_client = genai.Client(api_key=settings.GOOGLE_API_KEY)
 
     def _extract_content(self, file: UploadFile) -> str:
         """
