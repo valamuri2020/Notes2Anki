@@ -1,9 +1,0 @@
-version: "3.8"
-
-services:
-  frontend:
-    ports:
-      - "3000:3000" # Expose directly for local
-  backend:
-    ports:
-      - "8000:8000" # Expose directly for local
