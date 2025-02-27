@@ -58,7 +58,6 @@ export default function Home() {
 
       formData.append("request", JSON.stringify(requestData));
 
-      console.log("API_URL: ", API_URL);
       const response = await fetch(`${API_URL}/generate`, {
         method: "POST",
         body: formData,
@@ -142,8 +141,8 @@ export default function Home() {
                   className="flex flex-col items-center gap-4 px-4 sm:px-0 w-full max-w-md mx-auto"
                 >
                   <div className="w-full">
-                    <label 
-                      htmlFor="deckName" 
+                    <label
+                      htmlFor="deckName"
                       className="block text-base sm:text-lg font-medium text-[#2C2C2C] mb-2"
                     >
                       Deck Name

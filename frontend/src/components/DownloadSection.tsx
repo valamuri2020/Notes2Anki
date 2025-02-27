@@ -16,9 +16,6 @@ interface Props {
 export default function DownloadSection({ downloadData }: Props) {
     const fullFileName = downloadData.filename;
 
-    console.log(fullFileName);
-    console.log(fullFileName + ".apkg");
-
     const handleDownload = () => {
         const url = window.URL.createObjectURL(downloadData.blob);
         const a = document.createElement('a');
