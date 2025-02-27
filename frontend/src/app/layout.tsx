@@ -1,13 +1,8 @@
-import { Inter, Poppins } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({ subsets: ["latin"] });
-const poppins = Poppins({ 
-  weight: ['400', '500', '600', '700'],
-  subsets: ['latin'],
-  display: 'swap',
-});
 
 export const metadata = {
   title: "Notes2Anki - Turn your notes into flashcards",
@@ -21,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${poppins.className} min-h-screen bg-background`}>
+    <body className={inter.className}>
         {children}
         <Analytics />
       </body>
