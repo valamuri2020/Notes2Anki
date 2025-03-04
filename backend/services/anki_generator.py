@@ -106,7 +106,7 @@ class AnkiDeckInterface(LoggerMixin):
         try:
             with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
                 writer = csv.writer(csvfile)
-                writer.writerow(['Source', 'Question', 'Answer'])
+                writer.writerow(['Question', 'Answer', 'Source'])
                 
                 for source, cards in all_cards.items():
                     for card in cards:
