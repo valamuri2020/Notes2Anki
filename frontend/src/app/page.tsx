@@ -7,6 +7,7 @@ import FileUpload from "@/components/FileUpload";
 import Header from "@/components/Header";
 import CreativeLoader from "@/components/ProcessingLoader";
 import DownloadSection from "@/components/DownloadSection";
+import DeckSettingsPage from "@/components/DeckSettingsPage";
 import KofiButton from "@/components/KofiButton";
 import { API_URL } from "@/lib/constants";
 import { toast } from "react-hot-toast";
@@ -15,6 +16,8 @@ interface DownloadData {
   filename: string;
   blob: Blob;
   requestId: string;
+  isZip?: boolean;
+  files?: { name: string; size: number }[];
 }
 
 export default function Home() {
@@ -22,25 +25,38 @@ export default function Home() {
   const [isDownloadReady, setIsDownloadReady] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [downloadData, setDownloadData] = useState<DownloadData | null>(null);
-  const [deckNamePhase, setDeckNamePhase] = useState(false);
-  const [deckName, setDeckName] = useState("");
+  const [multipleDecksSetting, setMultipleDecksSetting] = useState(false);
+  const [outputFormat, setOutputFormat] = useState<'apkg' | 'pdf' | 'csv'>('apkg');
+  const [deckNames, setDeckNames] = useState<{ [key: string]: string }>({});
+  const [showSettings, setShowSettings] = useState(false);
 
-  // Set default deck name from first uploaded file (without extension)
+  // Set default deck names from uploaded files (without extension)
   useEffect(() => {
-    if (files.length > 0 && !deckNamePhase && !deckName) {
-      const defaultName = files[0].name.replace(/\.[^/.]+$/, "");
-      setDeckName(defaultName);
+    if (files.length > 0) {
+      const newDeckNames = { ...deckNames };
+      files.forEach(file => {
+        if (!newDeckNames[file.name]) {
+          newDeckNames[file.name] = file.name.replace(/\.[^/.]+$/, "");
+        }
+      });
+      setDeckNames(newDeckNames);
     }
-  }, [files, deckName, deckNamePhase]);
+  }, [files]);
 
   const handleSubmit = async () => {
-    if (!deckNamePhase) {
-      if (files.length === 0) return;
-      setDeckNamePhase(true);
+    if (files.length === 0) {
+      toast.error("Please upload at least one file");
       return;
     }
 
-    if (!deckName.trim()) {
+    // Validate deck names
+    if (multipleDecksSetting) {
+      const emptyNames = Object.values(deckNames).some(name => !name.trim());
+      if (emptyNames) {
+        toast.error("Please enter names for all decks");
+        return;
+      }
+    } else if (!deckNames[files[0].name]?.trim()) {
       toast.error("Please enter a deck name");
       return;
     }
@@ -53,7 +69,9 @@ export default function Home() {
 
       const requestData = {
         id: crypto.randomUUID(),
-        anki_filename: deckName + ".apkg"
+        multiple_decks: multipleDecksSetting,
+        output_format: outputFormat,
+        deck_names: deckNames
       };
 
       formData.append("request", JSON.stringify(requestData));
@@ -69,23 +87,47 @@ export default function Home() {
 
       const blob = await response.blob();
       const requestId = response.headers.get("X-Request-ID");
+      const contentType = response.headers.get("Content-Type");
+      const contentDisposition = response.headers.get("Content-Disposition");
+      const filename = contentDisposition?.split("filename=")[1]?.replace(/"/g, "") || 
+                      (multipleDecksSetting ? "decks.zip" : `${deckNames[files[0].name]}.${outputFormat}`);
+
+      let filesList = undefined;
+      if (multipleDecksSetting) {
+        filesList = files.map(file => ({
+          name: `${deckNames[file.name]}.${outputFormat}`,
+          size: 0 // Size will be approximate or unknown until actually downloaded
+        }));
+      }
 
       setDownloadData({
-        filename: deckName + ".apkg",
+        filename,
         blob,
-        requestId: requestId || ""
+        requestId: requestId || "",
+        isZip: multipleDecksSetting,
+        files: filesList
       });
 
       setIsProcessing(false);
       setIsDownloadReady(true);
     } catch (error) {
       console.error("Error generating deck:", error);
-      // Reset to initial state on error
-      setDeckNamePhase(false);
       setIsProcessing(false);
       setIsDownloadReady(false);
       toast.error("Oops, there was an error: " + error);
     }
+  };
+
+  const handleNext = () => {
+    if (files.length === 0) {
+      toast.error("Please upload at least one file");
+      return;
+    }
+    setShowSettings(true);
+  };
+
+  const handleBack = () => {
+    setShowSettings(false);
   };
 
   return (
@@ -94,81 +136,55 @@ export default function Home() {
       <Header />
       <div className="max-w-4xl mx-auto mt-8 sm:mt-16 flex-grow w-full">
         <AnimatePresence mode="wait">
-          {!isProcessing && !isDownloadReady && (
-            <>
-              {!deckNamePhase && (
-                <motion.div
-                  key="fileupload"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <FileUpload
-                    files={files}
-                    setFiles={setFiles}
-                  />
+          {!isProcessing && !isDownloadReady && !showSettings && (
+            <motion.div
+              key="upload"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <FileUpload
+                files={files}
+                setFiles={setFiles}
+              />
 
-                  <div className="mt-6 sm:mt-8 flex justify-center">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`w-1/2 sm:w-auto px-6 sm:px-8 py-3 rounded-lg text-white text-base sm:text-lg font-medium 
+              <div className="mt-6 sm:mt-8 flex justify-center">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`w-1/2 sm:w-auto px-6 sm:px-8 py-3 rounded-lg text-white text-base sm:text-lg font-medium 
                     transition-colors shadow-lg shadow-blue-500/20
                     ${files.length === 0
-                          ? 'bg-neutral-400 cursor-not-allowed'
-                          : 'bg-[#3A7DFF] hover:bg-[#316BDF]'
-                        }`}
-                      onClick={handleSubmit}
-                      disabled={files.length === 0}
-                    >
-                      Next
-                    </motion.button>
-                  </div>
-                  <div className="mt-6 sm:mt-9 p-2 border-2 border-dotted border-orange-500 rounded-lg bg-orange-100 text-center max-w-md mx-auto">
-                    <p className="text-orange-800 text-xs sm:text-sm">
-                      This website is in alpha testing, stuff might break, please be patient. It&apos;s my first time.
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-
-              {deckNamePhase && (
-                <motion.div
-                  key="deckname"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex flex-col items-center gap-4 px-4 sm:px-0 w-full max-w-md mx-auto"
+                      ? 'bg-neutral-400 cursor-not-allowed'
+                      : 'bg-[#3A7DFF] hover:bg-[#316BDF]'
+                    }`}
+                  onClick={handleNext}
+                  disabled={files.length === 0}
                 >
-                  <div className="w-full">
-                    <label
-                      htmlFor="deckName"
-                      className="block text-base sm:text-lg font-medium text-[#2C2C2C] mb-2"
-                    >
-                      Deck Name
-                    </label>
-                    <input
-                      id="deckName"
-                      type="text"
-                      placeholder="Enter deck name..."
-                      value={deckName}
-                      onChange={(e) => setDeckName(e.target.value)}
-                      className="p-3 border rounded-lg w-full text-base sm:text-lg"
-                    />
-                  </div>
-                  <div className="w-full flex justify-center mt-2">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-1/2 sm:w-auto bg-[#3A7DFF] hover:bg-[#316BDF] text-white px-6 sm:px-8 py-3 rounded-lg text-base sm:text-lg font-medium transition-colors shadow-lg shadow-blue-500/20"
-                      onClick={handleSubmit}
-                    >
-                      Generate Deck ⚡️
-                    </motion.button>
-                  </div>
-                </motion.div>
-              )}
-            </>
+                  Next
+                </motion.button>
+              </div>
+
+              <div className="mt-6 sm:mt-9 p-2 border-2 border-dotted border-orange-500 rounded-lg bg-orange-100 text-center max-w-md mx-auto">
+                <p className="text-orange-800 text-xs sm:text-sm">
+                  This website is in beta testing, stuff might break, please be patient. It&apos;s my first time.
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {!isProcessing && !isDownloadReady && showSettings && (
+            <DeckSettingsPage
+              files={files}
+              onBack={handleBack}
+              onSubmit={handleSubmit}
+              multipleDecksSetting={multipleDecksSetting}
+              setMultipleDecksSetting={setMultipleDecksSetting}
+              outputFormat={outputFormat}
+              setOutputFormat={setOutputFormat}
+              deckNames={deckNames}
+              setDeckNames={setDeckNames}
+            />
           )}
 
           {isProcessing && (
@@ -184,9 +200,15 @@ export default function Home() {
           )}
 
           {isDownloadReady && downloadData && (
+            <>
             <DownloadSection downloadData={downloadData} />
+            <p className="text-xs text-[#767676] mt-6 text-center">AI can make mistakes. Please verify important information.</p>
+            </>
+            
           )}
         </AnimatePresence>
+
+            
       </div>
 
       <KofiButton />

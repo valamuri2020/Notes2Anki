@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, Form, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.exceptions import RequestValidationError
-from typing import List
+from typing import List, Dict
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import json
@@ -22,6 +22,7 @@ from services.exceptions import (
 from config import Settings
 from concurrent.futures import ThreadPoolExecutor
 import time
+import os
 
 load_dotenv()
 
@@ -156,11 +157,14 @@ async def log_requests(request: Request, call_next):
 # Request model
 class GenerateRequest(BaseModel):
     id: str
-    anki_filename: str
+    multiple_decks: bool = False
+    output_format: str = 'apkg'  # 'apkg', 'pdf', or 'csv'
+    deck_names: Dict[str, str]  # mapping of filename to deck name
 
 # Response model
 class GenerateResponse(BaseModel):
     id: str
+    files: List[Dict[str, str]]  # list of generated files with their paths
 
 @app.post("/generate")
 async def generate_flashcards(
@@ -188,7 +192,8 @@ async def generate_flashcards(
         extra={
             "extra_fields": {
                 "request_id": generate_request.id,
-                "anki_filename": generate_request.anki_filename,
+                "multiple_decks": generate_request.multiple_decks,
+                "output_format": generate_request.output_format,
                 "file_count": len(files)
             }
         }
@@ -231,10 +236,39 @@ async def generate_flashcards(
             all_cards[filename] = cards
 
     generator = AnkiDeckInterface()
-    anki_file_path = generator.generate_deck(
-        all_cards,
-        generate_request.anki_filename,
-    )
+    output_files = []
+
+    if generate_request.multiple_decks:
+        # Generate a deck for each file
+        for filename, cards in all_cards.items():
+            deck_name = generate_request.deck_names.get(filename, filename.split('.')[0])
+            file_cards = {filename: cards}
+            output_path = generator.generate_deck(
+                file_cards,
+                deck_name,
+                output_format=generate_request.output_format
+            )
+            output_files.append(output_path)
+
+        # Create a zip file containing all decks
+        import zipfile
+        
+        zip_path = os.path.join("./tmp", f"{generate_request.id}.zip")
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            for file_path in output_files:
+                zipf.write(file_path, os.path.basename(file_path))
+                # Clean up individual files after adding to zip
+                os.remove(file_path)
+        
+        response_path = zip_path
+    else:
+        # Generate a single deck with all cards
+        deck_name = generate_request.deck_names.get(files[0].filename, files[0].filename.split('.')[0])
+        response_path = generator.generate_deck(
+            all_cards,
+            deck_name,
+            output_format=generate_request.output_format
+        )
 
     app_logger.info(
         "Flashcard generation completed",
@@ -242,17 +276,22 @@ async def generate_flashcards(
             "extra_fields": {
                 "request_id": generate_request.id,
                 "total_files": len(files),
-                "total_cards": sum(len(cards) for cards in all_cards.values())
+                "total_cards": sum(len(cards) for cards in all_cards.values()),
+                "output_format": generate_request.output_format,
+                "is_zip": generate_request.multiple_decks
             }
         }
     )
 
-    headers = {"X-Request-ID": generate_request.id}
+    headers = {
+        "X-Request-ID": generate_request.id,
+        "Content-Disposition": f'attachment; filename="{os.path.basename(response_path)}"'
+    }
+
     return FileResponse(
-        path=anki_file_path,
-        filename=generate_request.anki_filename,
-        media_type="application/apkg",
+        response_path,
         headers=headers,
+        media_type="application/zip" if generate_request.multiple_decks else None
     )
 
 if __name__ == "__main__":
