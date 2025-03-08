@@ -100,7 +100,7 @@ async def general_exception_handler(request: Request, exc: Exception):
                 "url": str(request.url),
                 "method": request.method,
                 "error": str(exc),
-                "error_type": type(exc).__name__,
+                # "error_type": type(exc).__name__,
             }
         },
     )
