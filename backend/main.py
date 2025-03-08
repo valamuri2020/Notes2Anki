@@ -6,6 +6,7 @@ from typing import List
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import json
+import asyncio
 from services.file_processor import FileProcessor
 from services.anki_generator import AnkiDeckInterface
 from services.validator import Validator
@@ -20,7 +21,6 @@ from services.exceptions import (
     Notes2AnkiError,
 )
 from config import Settings
-from concurrent.futures import ThreadPoolExecutor
 import time
 
 load_dotenv()
@@ -41,6 +41,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle validation errors (e.g., missing required fields)"""
@@ -50,14 +51,12 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             "extra_fields": {
                 "url": str(request.url),
                 "method": request.method,
-                "errors": exc.errors()
+                "errors": exc.errors(),
             }
-        }
+        },
     )
-    return JSONResponse(
-        status_code=422,
-        content={"detail": exc.errors()}
-    )
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
 
 @app.exception_handler(Notes2AnkiError)
 async def notes2anki_error_handler(request: Request, exc: Notes2AnkiError):
@@ -67,11 +66,11 @@ async def notes2anki_error_handler(request: Request, exc: Notes2AnkiError):
         ValidationError: 400,
         ProcessingError: 500,
         LLMError: 500,
-        AnkiError: 500
+        AnkiError: 500,
     }
-    
+
     status_code = status_codes.get(type(exc), 500)
-    
+
     app_logger.error(
         f"{type(exc).__name__} occurred",
         extra={
@@ -80,18 +79,16 @@ async def notes2anki_error_handler(request: Request, exc: Notes2AnkiError):
                 "method": request.method,
                 "error": str(exc),
                 "error_type": type(exc).__name__,
-                "details": getattr(exc, "details", None)
+                "details": getattr(exc, "details", None),
             }
-        }
+        },
     )
-    
+
     return JSONResponse(
         status_code=status_code,
-        content={
-            "detail": str(exc),
-            "details": getattr(exc, "details", None)
-        }
+        content={"detail": str(exc), "details": getattr(exc, "details", None)},
     )
+
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
@@ -103,16 +100,17 @@ async def general_exception_handler(request: Request, exc: Exception):
                 "url": str(request.url),
                 "method": request.method,
                 "error": str(exc),
-                "error_type": type(exc).__name__
+                "error_type": type(exc).__name__,
             }
-        }
+        },
     )
     return JSONResponse(
         status_code=500,
         content={
             "detail": "An internal server error occurred. Please try again later."
-        }
+        },
     )
+
 
 @app.exception_handler(FileValidationError)
 async def file_validation_exception_handler(request: Request, exc: FileValidationError):
@@ -124,21 +122,19 @@ async def file_validation_exception_handler(request: Request, exc: FileValidatio
                 "url": str(request.url),
                 "method": request.method,
                 "error": str(exc),
-                "details": exc.details
+                "details": exc.details,
             }
-        }
+        },
     )
-    return JSONResponse(
-        status_code=400,
-        content={"detail": str(exc)}
-    )
+    return JSONResponse(status_code=400, content={"detail": str(exc)})
+
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
     response = await call_next(request)
     process_time = (time.time() - start_time) * 1000
-    
+
     app_logger.info(
         "Request processed",
         extra={
@@ -147,20 +143,23 @@ async def log_requests(request: Request, call_next):
                 "url": str(request.url),
                 "client_host": request.client.host,
                 "process_time_ms": round(process_time, 2),
-                "status_code": response.status_code
+                "status_code": response.status_code,
             }
-        }
+        },
     )
     return response
+
 
 # Request model
 class GenerateRequest(BaseModel):
     id: str
     anki_filename: str
 
+
 # Response model
 class GenerateResponse(BaseModel):
     id: str
+
 
 @app.post("/generate")
 async def generate_flashcards(
@@ -171,64 +170,58 @@ async def generate_flashcards(
         request_data = json.loads(request)
         generate_request = GenerateRequest(**request_data)
     except json.JSONDecodeError as e:
-        raise RequestValidationError([{
-            "loc": ["body", "request"],
-            "msg": "Invalid JSON",
-            "type": "json_decode_error"
-        }])
+        raise RequestValidationError(
+            [
+                {
+                    "loc": ["body", "request"],
+                    "msg": "Invalid JSON",
+                    "type": "json_decode_error",
+                }
+            ]
+        )
     except Exception as e:
-        raise RequestValidationError([{
-            "loc": ["body", "request"],
-            "msg": str(e),
-            "type": "validation_error"
-        }])
-    
+        raise RequestValidationError(
+            [{"loc": ["body", "request"], "msg": str(e), "type": "validation_error"}]
+        )
+
     app_logger.info(
         "Starting flashcard generation",
         extra={
             "extra_fields": {
                 "request_id": generate_request.id,
                 "anki_filename": generate_request.anki_filename,
-                "file_count": len(files)
+                "file_count": len(files),
             }
-        }
+        },
     )
 
     # All validation and processing errors are handled by exception handlers
     validator.validate_file_count(files)
-    
+
     # Validate file extensions
     for file in files:
         validator.validate_file_ext(file)
-        
-    all_cards = {}
 
-    def process_single_file(file):
+    async def process_single_file(file):
         app_logger.debug(
-            f"Processing file",
-            extra={"extra_fields": {"filename": file.filename}}
+            f"Processing file", extra={"extra_fields": {"filename": file.filename}}
         )
-        file_contents = processor.process_file(file)
+        file_contents = await processor.process_file(file)
         creator = LLMCardCreator()
         cards = creator.create_cards(file_contents)
         app_logger.debug(
             f"File processed successfully",
             extra={
-                "extra_fields": {
-                    "filename": file.filename,
-                    "cards_created": len(cards)
-                }
-            }
+                "extra_fields": {"filename": file.filename, "cards_created": len(cards)}
+            },
         )
         return file.filename, cards
 
-    with ThreadPoolExecutor() as executor:
-        # Process files in parallel
-        future_results = [executor.submit(process_single_file, file) for file in files]
-        # Collect results
-        for future in future_results:
-            filename, cards = future.result()  # Exceptions will be caught by handlers
-            all_cards[filename] = cards
+    # Process all files concurrently using asyncio.gather
+    results = await asyncio.gather(*[process_single_file(file) for file in files])
+
+    # Convert results to dictionary
+    all_cards = dict(results)
 
     generator = AnkiDeckInterface()
     anki_file_path = generator.generate_deck(
@@ -242,9 +235,9 @@ async def generate_flashcards(
             "extra_fields": {
                 "request_id": generate_request.id,
                 "total_files": len(files),
-                "total_cards": sum(len(cards) for cards in all_cards.values())
+                "total_cards": sum(len(cards) for cards in all_cards.values()),
             }
-        }
+        },
     )
 
     headers = {"X-Request-ID": generate_request.id}
@@ -255,7 +248,9 @@ async def generate_flashcards(
         headers=headers,
     )
 
+
 if __name__ == "__main__":
     import uvicorn
+
     app_logger.info("Starting Notes2Anki API server")
     uvicorn.run(app, host="0.0.0.0", port=8000)

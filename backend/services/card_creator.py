@@ -83,9 +83,9 @@ class LLMCardCreator(LoggerMixin):
                 "extra_fields": {
                     "content_length": len(text),
                     "n_cards": n_cards,
-                    "model": model
+                    "model": model,
                 }
-            }
+            },
         )
 
         text = self._keyword_deduplicate_file_content(text)
@@ -104,38 +104,30 @@ class LLMCardCreator(LoggerMixin):
                 messages=[{"role": "user", "content": prompt}],
             )
         except Exception as e:
-            details = {
-                "model": model,
-                "error": str(e)
-            }
+            details = {"model": model, "error": str(e)}
             self.logger.error(
-                "Failed to get response from Cohere",
-                extra={"extra_fields": details}
+                "Failed to get response from Cohere", extra={"extra_fields": details}
             )
             raise LLMAPIError("Failed to generate cards", details=details)
 
         raw_cards = response.message.content[0].text
         self.logger.debug("Parsing card response")
-        
+
         try:
             cards_data = json.loads(raw_cards)
             cards = [Card.model_validate(card) for card in cards_data]
         except Exception as e:
-            details = {
-                "error": str(e),
-                "response_text": raw_cards
-            }
+            details = {"error": str(e), "response_text": raw_cards}
             self.logger.error(
-                "Failed to parse model response",
-                extra={"extra_fields": details}
+                "Failed to parse model response", extra={"extra_fields": details}
             )
             raise LLMResponseError("Failed to parse model response", details=details)
 
         self.logger.info(
             "Flashcard creation completed",
-            extra={"extra_fields": {"num_cards_created": len(cards)}}
+            extra={"extra_fields": {"num_cards_created": len(cards)}},
         )
-        
+
         return cards
 
 
