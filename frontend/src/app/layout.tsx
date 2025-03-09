@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from 'next';
+import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -31,6 +32,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <Script
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-X3LETSTQLT"
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-X3LETSTQLT');
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         {children}
         <Analytics />
