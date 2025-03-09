@@ -1,7 +1,7 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -45,7 +45,12 @@ export default function RootLayout({
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', 'G-X3LETSTQLT');
+              gtag('config', 'G-X3LETSTQLT', {
+                file_extensions: [
+                  'apkg','pdf','zip','doc','docx','xls','xlsx',
+                  'ppt','pptx','txt','csv'
+                ]
+              });
             `,
           }}
         />
