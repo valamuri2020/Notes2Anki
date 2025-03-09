@@ -124,11 +124,11 @@ export default function Home() {
                       Next
                     </motion.button>
                   </div>
-                  <div className="mt-6 sm:mt-9 p-2 border-2 border-dotted border-orange-500 rounded-lg bg-orange-100 text-center max-w-md mx-auto">
+                  {/* <div className="mt-6 sm:mt-9 p-2 border-2 border-dotted border-orange-500 rounded-lg bg-orange-100 text-center max-w-md mx-auto">
                     <p className="text-orange-800 text-xs sm:text-sm">
                       This website is in alpha testing, stuff might break, please be patient. It&apos;s my first time.
                     </p>
-                  </div>
+                  </div> */}
                 </motion.div>
               )}
 
@@ -184,7 +184,18 @@ export default function Home() {
           )}
 
           {isDownloadReady && downloadData && (
-            <DownloadSection downloadData={downloadData} />
+            <>
+              <div className="flex justify-end mb-4">
+                <a
+                  href="/"
+                  className="text-sm text-[#767676] hover:text-[#2C2C2C] font-medium transition-colors flex items-center"
+                >
+                  Create Another &rarr;
+                </a>
+              </div>
+              <DownloadSection downloadData={downloadData} />
+              <p className="text-xs text-[#767676] mt-6 text-center">AI can make mistakes. Please verify important information.</p>
+            </>
           )}
         </AnimatePresence>
       </div>
@@ -192,7 +203,7 @@ export default function Home() {
       <KofiButton />
 
       <footer className="w-full mt-auto pt-8 pb-4 text-center text-xs sm:text-sm text-gray-500">
-        <p>No data is permanently stored. Made with ❤️. © {new Date().getFullYear()} Vivek Alamuri.</p>
+        <p>No data is permanently stored. Made with ❤️ by <a href="https://www.linkedin.com/in/valamuri/" target="_blank" rel="noopener noreferrer" className="hover:text-black underline transition-colors">Vivek Alamuri</a>.</p>
       </footer>
     </main>
   );

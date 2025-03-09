@@ -93,7 +93,7 @@ export default function FileUpload({ files, setFiles }: FileUploadProps) {
                         or click to select files
                     </p>
                     <p className="text-xs sm:text-sm text-[#767676] mt-3 sm:mt-4">
-                        Supports PDF, PPT, DOC, TXT (max {MAX_FILE_SIZE / 1024 / 1024}MB per file)
+                        Supports PDF, PPT, DOCX, TXT (max {MAX_FILE_SIZE / 1024 / 1024}MB per file)
                     </p>
                 </motion.div>
                 {files.length > 0 && (
