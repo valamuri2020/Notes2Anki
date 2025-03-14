@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link"; // Add this import
 import FileUpload from "@/components/FileUpload";
 import Header from "@/components/Header";
 import CreativeLoader from "@/components/ProcessingLoader";
