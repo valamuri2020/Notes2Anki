@@ -187,12 +187,12 @@ export default function Home() {
           {isDownloadReady && downloadData && (
             <>
               <div className="flex justify-end mb-4">
-                <Link
-                  href="/"
+                <button
+                  onClick={() => window.location.reload()}
                   className="text-sm text-[#767676] hover:text-[#2C2C2C] font-medium transition-colors flex items-center"
                 >
                   Create Another &rarr;
-                </Link>
+                </button>
               </div>
               <DownloadSection downloadData={downloadData} />
               <p className="text-xs text-[#767676] mt-6 text-center">AI can make mistakes. Please verify important information.</p>
