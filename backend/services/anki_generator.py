@@ -48,7 +48,7 @@ class AnkiDeckInterface(LoggerMixin):
                 {
                     # required field
                     "name": "Q/A",
-                    "qfmt": "{{Question}}",
+                    "<div style='font-size: 26px;'>{{Question}}</div>"
                     "afmt": "{{Answer}}<br><br><small>Source: {{Source}}</small>",
                 }
             ],
@@ -132,13 +132,14 @@ class AnkiDeckInterface(LoggerMixin):
                     # Reset file pointer again for potential future reads
                     file.file.seek(0)
 
-                    page = doc.load_page(card.page_num-1)
+                    page = doc.load_page(card.page_num - 1)
                     pix = page.get_pixmap()
                     image_filename = f"{res.file.filename}_page_{card.page_num}.png"
                     # cleanup happens after writing deck to a file
                     images_to_cleanup.append(image_filename)
                     pix.save(image_filename)
 
+                    card.concept = card.concept.replace("(from an image)", "")
                     card.description = card.description.replace("(from an image)", "")
 
                     note = genanki.Note(
@@ -185,7 +186,9 @@ class AnkiDeckInterface(LoggerMixin):
                 },
             )
 
-            genanki.Package(deck, media_files=images_to_cleanup).write_to_file(output_path)
+            genanki.Package(deck, media_files=images_to_cleanup).write_to_file(
+                output_path
+            )
 
             self.logger.info(
                 "Anki deck generation completed successfully",
