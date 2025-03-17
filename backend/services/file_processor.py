@@ -7,6 +7,7 @@ from services.validator import Validator
 from google import genai
 from services.logger import LoggerMixin
 from services.exceptions import PDFProcessingError, DocumentProcessingError
+import asyncio
 
 
 class FileProcessor(LoggerMixin):
@@ -51,7 +52,8 @@ class FileProcessor(LoggerMixin):
                     model="gemini-1.5-flash",
                     contents=[
                         uploaded_file,
-                        "Extract all of the contents in the file and return it as markdown. If there are any images/diagrams/charts, describe what it's showing and the concept it highlights by enclosing that in <diagram></diagram> tags.",
+                        """Extract all of the contents in the file and return it as markdown. After each page, insert the text "[[Page N]]" where N is the page number.
+                        If there are any images/diagrams/charts, describe what it's showing and the concept it highlights by enclosing that in <diagram></diagram> tags.""",
                     ],
                 )
                 return response.text
@@ -196,5 +198,5 @@ if __name__ == "__main__":
 
     settings = Settings()
     processor = FileProcessor(settings)
-    text = processor.process_file(upload_file)
+    text = asyncio.run(processor.process_file(upload_file))
     print(text)

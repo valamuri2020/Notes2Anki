@@ -15,6 +15,7 @@ cohere = "^5.13.12"
 python-multipart = "^0.0.20"
 python-dotenv = "^1.0.1"
 google-genai = "^1.2.0"
+pymupdf = "^1.25.4"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -25,6 +26,7 @@ pytest = "^8.3.4"
 pytest-mock = "^3.14.0"
 httpx = "^0.28.1"
 pytest-asyncio = "^0.25.3"
+ipykernel = "^6.29.5"
 
 [build-system]
 requires = ["poetry-core"]

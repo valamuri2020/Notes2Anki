@@ -2,15 +2,15 @@ from fastapi import FastAPI, File, UploadFile, Form, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.exceptions import RequestValidationError
-from typing import List
+from typing import BinaryIO, List
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import json
 import asyncio
 from services.file_processor import FileProcessor
-from services.anki_generator import AnkiDeckInterface
+from services.anki_generator import AnkiDeckInterface, ProcessedFileResult
 from services.validator import Validator
-from services.card_creator import LLMCardCreator
+from services.card_creator import Card, LLMCardCreator
 from services.logger import app_logger, LoggerMixin
 from services.exceptions import (
     ValidationError,
@@ -29,6 +29,7 @@ app = FastAPI(title="Notes2Anki API")
 settings = Settings()
 validator = Validator(settings)
 processor = FileProcessor(settings)
+generator = AnkiDeckInterface()
 
 origins = ["http://localhost:3000", "https://www.notes2anki.com"]
 
@@ -202,30 +203,13 @@ async def generate_flashcards(
     for file in files:
         validator.validate_file_ext(file)
 
-    async def process_single_file(file):
-        app_logger.debug(
-            f"Processing file", extra={"extra_fields": {"filename": file.filename}}
-        )
-        file_contents = await processor.process_file(file)
-        creator = LLMCardCreator()
-        cards = creator.create_cards(file_contents)
-        app_logger.debug(
-            f"File processed successfully",
-            extra={
-                "extra_fields": {"filename": file.filename, "cards_created": len(cards)}
-            },
-        )
-        return file.filename, cards
-
     # Process all files concurrently using asyncio.gather
-    results = await asyncio.gather(*[process_single_file(file) for file in files])
+    results = await asyncio.gather(
+        *[generator.process_single_file(file) for file in files]
+    )
 
-    # Convert results to dictionary
-    all_cards = dict(results)
-
-    generator = AnkiDeckInterface()
-    anki_file_path = generator.generate_deck(
-        all_cards,
+    anki_file_path, num_cards_created = generator.generate_deck(
+        results,
         generate_request.anki_filename,
     )
 
@@ -235,7 +219,7 @@ async def generate_flashcards(
             "extra_fields": {
                 "request_id": generate_request.id,
                 "total_files": len(files),
-                "total_cards": sum(len(cards) for cards in all_cards.values()),
+                "total_cards": num_cards_created,
             }
         },
     )
