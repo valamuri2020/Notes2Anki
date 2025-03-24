@@ -214,7 +214,7 @@ export default function Home() {
       <KofiButton />
 
       <footer className="w-full mt-auto pt-8 pb-4 text-center text-xs sm:text-sm text-gray-500">
-        <p>No data is permanently stored. Made with ❤️. © {new Date().getFullYear()} Vivek Alamuri.</p>
+        <p>No data is permanently stored. Made with ❤️ by <a href="https://www.linkedi.com/in/valamuri/" target="_blank" rel="noopener noreferrer" className="hover:text-black underline transition-colors">Vivek Alamuri</a>.</p>
       </footer>
     </main>
   );
