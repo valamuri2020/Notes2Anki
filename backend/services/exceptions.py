@@ -77,3 +77,11 @@ class AnkiError(Notes2AnkiError):
 class AnkiDeckGenerationError(AnkiError):
     """Raised when there's an error generating the Anki deck."""
     pass 
+
+class CSVGenerationError(AnkiError):
+    """Raised when there's an error generating the Anki deck."""
+    pass 
+
+class PDFGenerationError(AnkiError):
+    """Raised when there's an error generating the Anki deck."""
+    pass 

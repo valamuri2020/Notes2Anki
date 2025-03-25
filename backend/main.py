@@ -210,26 +210,20 @@ async def generate_flashcards(
     for file in files:
         validator.validate_file_ext(file)
 
-    # Process files in parallel using ThreadPoolExecutor
-    all_cards = {}
-    with ThreadPoolExecutor() as executor:
-        # Process files in parallel
-        future_results = [executor.submit(generator.process_single_file, file) for file in files]
-        # Collect results
-        for future in future_results:
-            filename, cards = future.result()  # Exceptions will be caught by handlers
-            all_cards[filename] = cards
+    # Process all files concurrently using asyncio.gather
+    results = await asyncio.gather(
+        *[generator.process_single_file(file) for file in files]
+    )
 
     output_files = []
 
     if generate_request.multiple_decks:
         # Generate a deck for each file
-        for filename, cards in all_cards.items():
-            deck_name = generate_request.deck_names.get(filename, filename.split('.')[0])
-            file_cards = {filename: cards}
+        for res in results:
+            deck_name = generate_request.deck_names.get(res.file.filename, res.file.filename.split('.')[0])
             output_path = generator.generate_deck(
-                file_cards,
-                deck_name,
+                processed_file_results=results,
+                deck_name=deck_name,
                 output_format=generate_request.output_format
             )
             output_files.append(output_path)
@@ -247,8 +241,8 @@ async def generate_flashcards(
         # Generate a single deck with all cards
         deck_name = generate_request.deck_names.get(files[0].filename, files[0].filename.split('.')[0])
         response_path = generator.generate_deck(
-            all_cards,
-            deck_name,
+            processed_file_results=results,
+            deck_name=deck_name,
             output_format=generate_request.output_format
         )
 
@@ -258,7 +252,10 @@ async def generate_flashcards(
             "extra_fields": {
                 "request_id": generate_request.id,
                 "total_files": len(files),
-                "total_cards": sum(len(cards) for cards in all_cards.values()),
+                
+                # TODO: write logic to get total cards later
+
+                # "total_cards": total_cards,
                 "output_format": generate_request.output_format,
                 "is_zip": generate_request.multiple_decks
             }
@@ -273,7 +270,7 @@ async def generate_flashcards(
     return FileResponse(
         response_path,
         headers=headers,
-        media_type="application/zip" if generate_request.multiple_decks else None
+        media_type="application/zip" if generate_request.multiple_decks else f"application/{generate_request.output_format}"
     )
 
 
