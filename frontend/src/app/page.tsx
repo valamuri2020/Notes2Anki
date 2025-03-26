@@ -41,7 +41,7 @@ export default function Home() {
       });
       setDeckNames(newDeckNames);
     }
-  }, [files]);
+  }, [files, deckNames]);
 
   const handleSubmit = async () => {
     if (files.length === 0) {
@@ -87,10 +87,10 @@ export default function Home() {
 
       const blob = await response.blob();
       const requestId = response.headers.get("X-Request-ID");
-      const contentType = response.headers.get("Content-Type");
+      // const contentType = response.headers.get("Content-Type");
       const contentDisposition = response.headers.get("Content-Disposition");
-      const filename = contentDisposition?.split("filename=")[1]?.replace(/"/g, "") || 
-                      (multipleDecksSetting ? "decks.zip" : `${deckNames[files[0].name]}.${outputFormat}`);
+      const filename = contentDisposition?.split("filename=")[1]?.replace(/"/g, "") ||
+        (multipleDecksSetting ? "decks.zip" : `${deckNames[files[0].name]}.${outputFormat}`);
 
       let filesList = undefined;
       if (multipleDecksSetting) {
@@ -215,7 +215,7 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-            
+
       </div>
 
       <KofiButton />

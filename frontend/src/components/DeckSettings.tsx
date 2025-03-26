@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check } from 'lucide-react';
 
 interface DeckSettingsProps {
     files: File[];
@@ -37,25 +36,23 @@ export default function DeckSettings({
             }
         });
         setDeckNames(newDeckNames);
-    }, [files]);
+    }, [files, deckNames, setDeckNames]);
 
     return (
         <div className="glass-morphism rounded-xl p-6 mt-4">
             <h3 className="text-lg font-medium mb-4">Deck Settings</h3>
-            
+
             {/* Multiple Decks Toggle */}
             <div className="mb-6">
                 <label className="flex items-center space-x-3 cursor-pointer">
-                    <div 
-                        className={`w-10 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${
-                            multipleDecksSetting ? 'bg-[#3A7DFF]' : 'bg-gray-300'
-                        }`}
+                    <div
+                        className={`w-10 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${multipleDecksSetting ? 'bg-[#3A7DFF]' : 'bg-gray-300'
+                            }`}
                         onClick={() => setMultipleDecksSetting(!multipleDecksSetting)}
                     >
                         <div
-                            className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
-                                multipleDecksSetting ? 'translate-x-4' : 'translate-x-0'
-                            }`}
+                            className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${multipleDecksSetting ? 'translate-x-4' : 'translate-x-0'
+                                }`}
                         />
                     </div>
                     <span className="text-sm">Create Multiple Decks</span>
@@ -73,11 +70,10 @@ export default function DeckSettings({
                         <button
                             key={format}
                             onClick={() => setOutputFormat(format as 'apkg' | 'pdf' | 'csv')}
-                            className={`px-4 py-2 rounded-lg text-sm transition-colors duration-200 ${
-                                outputFormat === format
-                                    ? 'bg-[#3A7DFF] text-white'
-                                    : 'bg-white/50 hover:bg-white/80'
-                            }`}
+                            className={`px-4 py-2 rounded-lg text-sm transition-colors duration-200 ${outputFormat === format
+                                ? 'bg-[#3A7DFF] text-white'
+                                : 'bg-white/50 hover:bg-white/80'
+                                }`}
                         >
                             .{format.toUpperCase()}
                         </button>
@@ -122,4 +118,4 @@ export default function DeckSettings({
             </AnimatePresence>
         </div>
     );
-} 
+}

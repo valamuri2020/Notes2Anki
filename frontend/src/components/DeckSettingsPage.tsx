@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Check, FileText } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, FileText } from 'lucide-react';
 
 interface DeckSettingsPageProps {
     files: File[];
@@ -87,7 +86,7 @@ export default function DeckSettingsPage({
                     <h3 className="text-base font-medium text-[#2C2C2C] mb-3">
                         {multipleDecksSetting ? 'Deck Names' : 'Deck Name'}
                     </h3>
-                    
+
                     {/* Show all files when in single deck mode */}
                     {!multipleDecksSetting && (
                         <div className="mb-3 p-2 bg-gray-50 rounded-lg border border-gray-100">
