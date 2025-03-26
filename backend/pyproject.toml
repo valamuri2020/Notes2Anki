@@ -8,7 +8,6 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 genanki = "^0.13.1"
-docling = "^2.24.0"
 fastapi = "^0.115.8"
 uvicorn = "^0.34.0"
 cohere = "^5.13.12"
@@ -21,6 +20,7 @@ httpx = "^0.28.1"
 pytest-asyncio = "^0.25.3"
 reportlab = "^4.3.1"
 pymupdf = "^1.25.4"
+docling = "2.24.0"
 
 
 [tool.poetry.group.dev.dependencies]

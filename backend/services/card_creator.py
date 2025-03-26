@@ -75,12 +75,12 @@ class Prompts:
 
     Here are examples of the *types* of information that should NOT be included in flashcards:
 
-    *   Course mechanics (website links, office hours)
-    *   Course outlines (lists of topics)
-    *   Administrative details (grading policies, late submission rules)
-    *   Introductory or concluding remarks
-    *   Meta-discussions about the content (e.g., "This topic is important because...")
-    *   Anything not directly part of the core subject matter.
+    - Course mechanics (website links, office hours)
+    - Course outlines (lists of topics)
+    - Administrative details (grading policies, late submission rules)
+    - Introductory or concluding remarks
+    - Meta-discussions about the content (e.g., "This topic is important because...")
+    - Anything not directly part of the core subject matter.
 
     ### Citations
 
