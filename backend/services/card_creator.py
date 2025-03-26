@@ -63,7 +63,7 @@ class Prompts:
     If a concept contains multiple subtopics, do not flatten the hierarchy. Instead:
     - Use a structured format within the description to preserve subtopics.
     - When necessary, break into separate but linked flashcards.
-    - Use indentation, numbering, or bullet points to maintain clarity.
+    - Use indentation, numbering, or bullet points to maintain clarity. Make sure that each point starts on a new line for readability.
 
     Also, do not miss any *key concepts*. It is better to include an extra flashcard if you are unsure.
     Make sure each flashcard is self-contained, it should make sense if I pick it up on its own. References to other parts of the content that don't make sense without context are not suitable for flashcard-style learning. 

@@ -158,7 +158,7 @@ async def log_requests(request: Request, call_next):
 class GenerateRequest(BaseModel):
     id: str
     multiple_decks: bool = False
-    output_format: str = 'apkg'  # 'apkg', 'pdf', or 'csv'
+    output_format: str = "apkg"  # 'apkg', 'pdf', or 'csv'
     deck_names: Dict[str, str]  # mapping of filename to deck name
 
 
@@ -198,7 +198,7 @@ async def generate_flashcards(
                 "request_id": generate_request.id,
                 "multiple_decks": generate_request.multiple_decks,
                 "output_format": generate_request.output_format,
-                "file_count": len(files)
+                "file_count": len(files),
             }
         },
     )
@@ -220,30 +220,36 @@ async def generate_flashcards(
     if generate_request.multiple_decks:
         # Generate a deck for each file
         for res in results:
-            deck_name = generate_request.deck_names.get(res.file.filename, res.file.filename.split('.')[0])
+            deck_name = generate_request.deck_names.get(
+                res.file.filename, res.file.filename.split(".")[0]
+            )
             output_path = generator.generate_deck(
-                processed_file_results=results,
+                processed_file_results=[
+                    res
+                ],  # Fix: Pass only the current file's result
                 deck_name=deck_name,
-                output_format=generate_request.output_format
+                output_format=generate_request.output_format,
             )
             output_files.append(output_path)
 
         # Create a zip file containing all decks
         zip_path = os.path.join("./tmp", f"{generate_request.id}.zip")
-        with zipfile.ZipFile(zip_path, 'w') as zipf:
+        with zipfile.ZipFile(zip_path, "w") as zipf:
             for file_path in output_files:
                 zipf.write(file_path, os.path.basename(file_path))
                 # Clean up individual files after adding to zip
                 os.remove(file_path)
-        
+
         response_path = zip_path
     else:
         # Generate a single deck with all cards
-        deck_name = generate_request.deck_names.get(files[0].filename, files[0].filename.split('.')[0])
+        deck_name = generate_request.deck_names.get(
+            files[0].filename, files[0].filename.split(".")[0]
+        )
         response_path = generator.generate_deck(
             processed_file_results=results,
             deck_name=deck_name,
-            output_format=generate_request.output_format
+            output_format=generate_request.output_format,
         )
 
     app_logger.info(
@@ -252,25 +258,27 @@ async def generate_flashcards(
             "extra_fields": {
                 "request_id": generate_request.id,
                 "total_files": len(files),
-                
                 # TODO: write logic to get total cards later
-
                 # "total_cards": total_cards,
                 "output_format": generate_request.output_format,
-                "is_zip": generate_request.multiple_decks
+                "is_zip": generate_request.multiple_decks,
             }
         },
     )
 
     headers = {
         "X-Request-ID": generate_request.id,
-        "Content-Disposition": f'attachment; filename="{os.path.basename(response_path)}"'
+        "Content-Disposition": f'attachment; filename="{os.path.basename(response_path)}"',
     }
 
     return FileResponse(
         response_path,
         headers=headers,
-        media_type="application/zip" if generate_request.multiple_decks else f"application/{generate_request.output_format}"
+        media_type=(
+            "application/zip"
+            if generate_request.multiple_decks
+            else f"application/{generate_request.output_format}"
+        ),
     )
 
 
