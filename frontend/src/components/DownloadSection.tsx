@@ -1,12 +1,14 @@
 // src/components/DownloadSection.tsx
 import { motion } from "framer-motion";
-import { Check, Download, Share2 } from "lucide-react";
+import { Check, Download, Share2, Archive } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface DownloadData {
     filename: string;
     blob: Blob;
     requestId: string;
+    isZip?: boolean;
+    files?: { name: string; size: number }[];
 }
 
 interface Props {
@@ -15,6 +17,7 @@ interface Props {
 
 export default function DownloadSection({ downloadData }: Props) {
     const fullFileName = downloadData.filename;
+    const isZip = downloadData.isZip;
 
     const handleDownload = () => {
         const url = window.URL.createObjectURL(downloadData.blob);
@@ -60,14 +63,33 @@ export default function DownloadSection({ downloadData }: Props) {
                     Your flashcards are ready!
                 </h2>
                 <p className="text-[#767676] mb-8">
-                    Download your Anki package below
+                    {isZip 
+                        ? "Download your flashcard decks package below"
+                        : "Download your Anki package below"
+                    }
                 </p>
 
                 {/* File info */}
                 <div className="mb-6 p-3 bg-white/50 rounded-lg inline-block">
-                    <p className="text-sm text-[#767676]">
-                        Package: {fullFileName}
-                    </p>
+                    {isZip ? (
+                        <div>
+                            <p className="text-sm text-[#767676] mb-2">
+                                Package: {fullFileName}
+                            </p>
+                            <div className="text-left">
+                                {downloadData.files?.map((file, index) => (
+                                    <p key={index} className="text-xs text-[#767676] flex items-center gap-2">
+                                        <Archive className="w-3 h-3" />
+                                        {file.name}
+                                    </p>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-sm text-[#767676]">
+                            Package: {fullFileName}
+                        </p>
+                    )}
                 </div>
 
                 {/* Actions */}
@@ -81,7 +103,7 @@ export default function DownloadSection({ downloadData }: Props) {
                         onClick={handleDownload}
                     >
                         <Download className="w-5 h-5" />
-                        Download Now
+                        Download {isZip ? 'All Decks' : 'Now'}
                     </motion.button>
 
                     <button
@@ -98,6 +120,9 @@ export default function DownloadSection({ downloadData }: Props) {
                     </button>
                 </div>
             </motion.div>
+
+            {/* <p>AI can make mistakes - check important info.</p> */}
+            
 
             {/* Optional: Add subtle confetti animation here */}
         </motion.div>
