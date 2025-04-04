@@ -12,8 +12,7 @@ COPY poetry.lock pyproject.toml /app/
 
 # Configure poetry to create the virtualenv inside the project directory
 RUN poetry config virtualenvs.in-project true && \
-    poetry install --without dev --no-root --compile && \
-    poetry run docling-tools models download
+    poetry install --without dev --no-root --compile
 
 # Copy application code
 COPY main.py config.py /app/
