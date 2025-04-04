@@ -9,7 +9,11 @@ from pydantic import BaseModel
 from services.card_creator import Card
 from services.file_processor import FileProcessor
 from services.logger import LoggerMixin
-from services.exceptions import AnkiDeckGenerationError, PDFGenerationError, CSVGenerationError
+from services.exceptions import (
+    AnkiDeckGenerationError,
+    PDFGenerationError,
+    CSVGenerationError,
+)
 from fastapi import UploadFile
 import fitz
 import tempfile
@@ -81,23 +85,31 @@ class AnkiDeckInterface(LoggerMixin):
 
         return card_model
 
-    def _generate_pdf(self, processed_file_results: List[ProcessedFileResult], output_path: str) -> str:
+    def _generate_pdf(
+        self, processed_file_results: List[ProcessedFileResult], output_path: str
+    ) -> str:
         try:
             from reportlab.lib import colors
             from reportlab.lib.pagesizes import letter
-            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            from reportlab.platypus import (
+                SimpleDocTemplate,
+                Table,
+                TableStyle,
+                Paragraph,
+                Spacer,
+            )
             from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-            
+
             doc = SimpleDocTemplate(output_path, pagesize=letter)
             styles = getSampleStyleSheet()
             elements = []
 
             cell_style = ParagraphStyle(
-                'CustomCell',
-                parent=styles['Normal'],
+                "CustomCell",
+                parent=styles["Normal"],
                 fontSize=10,
                 leading=14,
-                wordWrap=True
+                wordWrap=True,
             )
 
             for res in processed_file_results:
@@ -112,30 +124,38 @@ class AnkiDeckInterface(LoggerMixin):
                         if card.page_num != -1
                         else citation
                     )
-                    data.append([
-                        Paragraph(card.concept, cell_style),
-                        Paragraph(card.description, cell_style),
-                        Paragraph(citation_with_page, cell_style)
-                    ])
+                    data.append(
+                        [
+                            Paragraph(card.concept, cell_style),
+                            Paragraph(card.description, cell_style),
+                            Paragraph(citation_with_page, cell_style),
+                        ]
+                    )
 
                 # Adjust column widths to fit within the page margins
-                table = Table(data, colWidths=[doc.width * 0.4, doc.width * 0.5, doc.width * 0.1])
-                
+                table = Table(
+                    data, colWidths=[doc.width * 0.4, doc.width * 0.5, doc.width * 0.1]
+                )
+
                 # Create and style the table
-                table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 12),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                    ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                    ('WORDWRAP', (0, 0), (-1, -1), True),
-                    ('ROWSPLITOVERPAGE', (0, 0), (-1, -1), True),
-                ]))
-                
+                table.setStyle(
+                    TableStyle(
+                        [
+                            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                            ("FONTSIZE", (0, 0), (-1, 0), 12),
+                            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                            ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+                            ("TEXTCOLOR", (0, 1), (-1, -1), colors.black),
+                            ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                            ("WORDWRAP", (0, 0), (-1, -1), True),
+                            ("ROWSPLITOVERPAGE", (0, 0), (-1, -1), True),
+                        ]
+                    )
+                )
+
                 elements.append(table)
                 elements.append(Spacer(1, 20))
 
@@ -143,23 +163,19 @@ class AnkiDeckInterface(LoggerMixin):
             return output_path
 
         except Exception as e:
-            details = {
-                "output_path": output_path,
-                "error": str(e)
-            }
-            self.logger.error(
-                "Error generating PDF",
-                extra={"extra_fields": details}
-            )
+            details = {"output_path": output_path, "error": str(e)}
+            self.logger.error("Error generating PDF", extra={"extra_fields": details})
             raise PDFGenerationError("Failed to generate PDF", details=details)
 
-    def _generate_csv(self, processed_file_results: List[ProcessedFileResult], output_path: str) -> str:
+    def _generate_csv(
+        self, processed_file_results: List[ProcessedFileResult], output_path: str
+    ) -> str:
         """Generate a CSV file containing all flashcards."""
         try:
-            with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
+            with open(output_path, "w", newline="", encoding="utf-8") as csvfile:
                 writer = csv.writer(csvfile)
-                writer.writerow(['Question', 'Answer', 'Source'])
-                
+                writer.writerow(["Question", "Answer", "Source"])
+
                 for res in processed_file_results:
                     for card in res.cards:
                         citation = res.file.filename
@@ -169,26 +185,29 @@ class AnkiDeckInterface(LoggerMixin):
                             else citation
                         )
 
-                        writer.writerow([card.concept, card.description, citation_with_page])
-                        
+                        writer.writerow(
+                            [card.concept, card.description, citation_with_page]
+                        )
+
             return output_path
-            
+
         except Exception as e:
-            details = {
-                "output_path": output_path,
-                "error": str(e)
-            }
-            self.logger.error(
-                "Error generating CSV",
-                extra={"extra_fields": details}
-            )
+            details = {"output_path": output_path, "error": str(e)}
+            self.logger.error("Error generating CSV", extra={"extra_fields": details})
             raise CSVGenerationError("Failed to generate CSV", details=details)
 
-    def _generate_apkg(self, processed_file_results: List[ProcessedFileResult], deck_name: str, output_path: str) -> str:
+    def _generate_apkg(
+        self,
+        processed_file_results: List[ProcessedFileResult],
+        deck_name: str,
+        output_path: str,
+    ) -> str:
         """Generate an Anki package file."""
         try:
             # Create deck
-            deck = genanki.Deck(deck_id=random.randrange(1 << 30, 1 << 31), name=deck_name)
+            deck = genanki.Deck(
+                deck_id=random.randrange(1 << 30, 1 << 31), name=deck_name
+            )
 
             images_to_cleanup = []
 
@@ -201,7 +220,9 @@ class AnkiDeckInterface(LoggerMixin):
 
                 self.logger.debug(
                     "Processing cards from source",
-                    extra={"extra_fields": {"source": citation, "num_cards": len(cards)}},
+                    extra={
+                        "extra_fields": {"source": citation, "num_cards": len(cards)}
+                    },
                 )
 
                 for card in cards:
@@ -241,7 +262,9 @@ class AnkiDeckInterface(LoggerMixin):
                         pix.save(image_filename)
 
                         card.concept = card.concept.replace("(from an image)", "")
-                        card.description = card.description.replace("(from an image)", "")
+                        card.description = card.description.replace(
+                            "(from an image)", ""
+                        )
 
                         note = genanki.Note(
                             model=self.qa_with_img_model,
@@ -269,19 +292,20 @@ class AnkiDeckInterface(LoggerMixin):
             details = {
                 "deck_name": deck_name,
                 "output_path": output_path,
-                "error": str(e)
+                "error": str(e),
             }
             self.logger.error(
-                "Error generating Anki package",
-                extra={"extra_fields": details}
+                "Error generating Anki package", extra={"extra_fields": details}
             )
-            raise AnkiDeckGenerationError("Failed to generate Anki package", details=details)
-        
+            raise AnkiDeckGenerationError(
+                "Failed to generate Anki package", details=details
+            )
+
         finally:
             for image in images_to_cleanup:
                 if os.path.exists(image):
                     os.remove(image)
-        
+
         return output_path
 
     def generate_deck(
@@ -289,7 +313,7 @@ class AnkiDeckInterface(LoggerMixin):
         processed_file_results: List[ProcessedFileResult],
         deck_name: str,
         output_dir="./tmp",
-        output_format="apkg"
+        output_format="apkg",
     ) -> str:
         self.logger.info(
             "Starting Anki deck generation",
@@ -301,7 +325,7 @@ class AnkiDeckInterface(LoggerMixin):
                 }
             },
         )
-        os.makedirs(output_dir, exist_ok=True) 
+        os.makedirs(output_dir, exist_ok=True)
 
         # Process deck name
         deck_name = deck_name.split(".apkg")[0] if ".apkg" in deck_name else deck_name
@@ -312,18 +336,20 @@ class AnkiDeckInterface(LoggerMixin):
         output_path = os.path.join(output_dir, f"{base_name}.{output_format}")
 
         try:
-            if output_format == 'apkg':
-                return self._generate_apkg(processed_file_results, base_name, output_path)
-            elif output_format == 'pdf':
+            if output_format == "apkg":
+                return self._generate_apkg(
+                    processed_file_results, base_name, output_path
+                )
+            elif output_format == "pdf":
                 return self._generate_pdf(processed_file_results, output_path)
-            elif output_format == 'csv':
+            elif output_format == "csv":
                 return self._generate_csv(processed_file_results, output_path)
             else:
                 raise ValueError(f"Unsupported output format: {output_format}")
 
         except Exception as e:
             raise e
-            
+
     async def process_single_file(self, file: UploadFile):
         self.logger.debug(
             f"Processing file", extra={"extra_fields": {"filename": file.filename}}
@@ -339,6 +365,7 @@ class AnkiDeckInterface(LoggerMixin):
         )
         return ProcessedFileResult(cards=cards, file=file)
 
+
 if __name__ == "__main__":
     import io
     import sys
@@ -351,7 +378,12 @@ if __name__ == "__main__":
 
     load_dotenv()
     demo_filepath = sys.argv[1]
+    output_dir = sys.argv[2] if len(sys.argv) > 2 else "./tmp"
+    output_format = sys.argv[3] if len(sys.argv) > 3 else "csv"
     filename = os.path.basename(demo_filepath)
+
+    print(f"Output directory: {output_dir}")
+    print(f"Output format: {output_format}")
 
     with open(demo_filepath, "rb") as f:
         file_content = f.read()
@@ -363,4 +395,9 @@ if __name__ == "__main__":
 
     res = asyncio.run(deck_creator.process_single_file(upload_file))
 
-    deck_creator.generate_deck([res], deck_name=filename.split(".")[0])
+    deck_creator.generate_deck(
+        [res],
+        deck_name=filename.split(".")[0],
+        output_dir=output_dir,
+        output_format=output_format,
+    )

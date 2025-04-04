@@ -217,6 +217,7 @@ async def generate_flashcards(
 
     output_files = []
 
+    # FIXME: there is a bug where only the first deck gets images in it, why?
     if generate_request.multiple_decks:
         # Generate a deck for each file
         for res in results:

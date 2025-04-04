@@ -3,7 +3,7 @@ import random
 
 # Sample data - replace with your actual array of dictionaries
 qa_pairs = [
-    {'question': 'What is the capital of France?', 'answer': 'Paris'},
+    {'question': 'What is the capital of France?', 'answer': '*   Alerts us to real or potential danger\n*   Prepares us to take action (e.g., study for a test, get up to go to work)\n*   Helps us escape danger\n*   Exists in moderate amounts'},
     {'question': 'What is the highest mountain in the world?', 'answer': 'Mount Everest'},
     {'question': 'What is the chemical symbol for water?', 'answer': 'H2O'}
 ]
