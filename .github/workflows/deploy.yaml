@@ -30,7 +30,7 @@ jobs:
       - name: Build and Push Docker Image with Cache
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: backend
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/notes2anki-backend:prod
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -48,6 +48,6 @@ jobs:
           key: ${{ secrets.DROPLET_SSH_KEY }}
           script: |
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/notes2anki-backend:prod
-            docker stop notes2anki-backend:prod || true
-            docker rm notes2anki-backend:prod || true
-            docker run -d --env-file /root/notes2anki.env --name notes2anki-backend:prod -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/notes2anki-backend:prod
+            docker stop notes2anki-backend || true
+            docker rm notes2anki-backend || true
+            docker run -d --env-file /root/notes2anki.env --name notes2anki-backend -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/notes2anki-backend:prod
