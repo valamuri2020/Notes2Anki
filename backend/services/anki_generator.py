@@ -234,8 +234,8 @@ class AnkiDeckInterface(LoggerMixin):
 
                     # to only print it the first time
                     DEBUG = 0
-                    # FIXME: tbh this is not a great way of detecting whether to include an image or not, but it does the job for now
-                    if "(from an image)" in card.description:
+                    # FIXME: the image understanding is not great, so exclude images for now
+                    if self.settings.DISABLE_IMAGE_SUPPORT == False and "(from an image)" in card.description:
                         # Create a temporary file handle for the PDF data
                         if DEBUG == 0:
                             self.logger.debug("Making card with an image in it")

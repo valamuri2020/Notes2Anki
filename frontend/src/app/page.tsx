@@ -34,14 +34,20 @@ export default function Home() {
   useEffect(() => {
     if (files.length > 0) {
       const newDeckNames = { ...deckNames };
+      let shouldUpdate = false;
+      
       files.forEach(file => {
         if (!newDeckNames[file.name]) {
           newDeckNames[file.name] = file.name.replace(/\.[^/.]+$/, "");
+          shouldUpdate = true;
         }
       });
-      setDeckNames(newDeckNames);
+      
+      if (shouldUpdate) {
+        setDeckNames(newDeckNames);
+      }
     }
-  }, [files, deckNames]);
+  }, [files]);
 
   const handleSubmit = async () => {
     if (files.length === 0) {

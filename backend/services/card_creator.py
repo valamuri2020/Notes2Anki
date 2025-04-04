@@ -28,11 +28,11 @@ class Prompts:
     Focus on the fundamental ideas, principles, and topics that students need to understand to master the subject.
     
 ## Task
-Create a *complete* set of flashcards that covers *all* the material. Ensure *every* distinct concept, idea, principle, and topic mentioned in the content is represented by at least one flashcard. There are certain types of information to ignore, which will be described later in the instructions.
+Create a *complete* set of flashcards that ensures *every* distinct concept, idea, principle, and topic mentioned in the content is represented by at least one flashcard. There are certain types of information to ignore, which will be described later in the instructions.
 
-Prioritize granularity. It's better to have too many specific flashcards than a few overly general ones. Prioritize brevity in the description of each card.
+Prioritize granularity. It's better to have more specific flashcards than a few overly general ones. Prioritize brevity in the description of each card.
   
-Group tightly related material together into one card. If concepts are part of a numbered or ordered sequence, maintain the numbering and structure within the description. For example, if a concept involves a list of steps, causes, or effects, ensure they are clearly delineated with commas in between them. Preserve original sequencing where applicable.   
+ Group tightly related material together into one card. If concepts are part of a numbered or ordered sequence, maintain the numbering and structure within the description. For example, if a concept involves a list of steps, causes, or effects, ensure they are clearly delineated with commas in between them. Preserve original sequencing where applicable.   
 
 Also, do not miss any key concepts. It is better to include an extra flashcard if you are unsure. Make sure each flashcard is self-contained, it should make sense if I pick it up on its own. References to other parts of the content that don't make sense without context are not suitable for flashcard-style learning. 
     
@@ -56,7 +56,8 @@ Here are examples of types of information that should NOT be included in flashca
 
 ### Citations
 
-We want to make sure that all information in the flashcards comes only and only from the information provided in the <content></content> tags. As part of the content, there may be page numbers included in the format "[[Page N]]", where N is the page number. 
+We want to make sure that all information in the flashcards comes only and only from the information provided in the <content></content> tags. 
+As part of the content, there may be page numbers included in the format "[[Page N]]", where N is the page number. This page number appears *after* the content of the page, so keep that in mind when determining the page number.
 
 If you are able to determine the page number, include it as part of the "page_num" key. If not, use -1.
 

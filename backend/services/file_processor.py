@@ -49,7 +49,7 @@ class FileProcessor(LoggerMixin):
 
                 self.logger.debug("Generating content from PDF using Gemini")
                 response = await self.google_client.aio.models.generate_content(
-                    model="gemini-1.5-flash",
+                    model="gemini-2.0-flash",
                     contents=[
                         uploaded_file,
                         """Extract all of the contents in the file and return it as markdown. After each page, insert the text "[[Page N]]" where N is the page number.

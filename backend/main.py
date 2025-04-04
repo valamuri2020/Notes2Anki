@@ -221,6 +221,9 @@ async def generate_flashcards(
     if generate_request.multiple_decks:
         # Generate a deck for each file
         for res in results:
+            # Reset the file pointer before processing each deck
+            res.file.file.seek(0)
+            
             deck_name = generate_request.deck_names.get(
                 res.file.filename, res.file.filename.split(".")[0]
             )

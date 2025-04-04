@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # Required settings (no defaults - must be in environment)
     COHERE_API_KEY: str
     GOOGLE_API_KEY: str
+    DISABLE_IMAGE_SUPPORT: bool = False
 
     class Config:
         env_file = ".env"
