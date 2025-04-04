@@ -1,42 +1,23 @@
-# Build stage
-FROM python:3.11-slim AS builder
+# Single-stage build for faster deployment
+FROM python:3.11-slim
 
 # Install poetry
 RUN pip install poetry
 
-# Copy only requirements to cache them in docker layer
-WORKDIR /app
-COPY poetry.lock pyproject.toml /app/
-
-# Configure poetry to create the virtualenv inside the project directory
-RUN poetry config virtualenvs.in-project true
-
-# Install dependencies; use compile to convert Python to bytecode upon install instead of first run
-RUN poetry install --without dev --no-root --compile
-
-# Download models
-RUN poetry run docling-tools models download
-
-# Development stage
-FROM python:3.11-slim AS development
-
-# Copy virtual environment from builder
-COPY --from=builder /app/.venv /app/.venv
-COPY --from=builder /app/poetry.lock /app/poetry.lock
-COPY --from=builder /root/.cache/docling/models /root/.cache/docling/models
-
 # Set working directory
 WORKDIR /app
 
+# Copy only requirements to cache them in docker layer
+COPY poetry.lock pyproject.toml /app/
+
+# Configure poetry to create the virtualenv inside the project directory
+RUN poetry config virtualenvs.in-project true && \
+    poetry install --without dev --no-root --compile && \
+    poetry run docling-tools models download
+
 # Copy application code
-COPY main.py /app/
-COPY config.py /app/
-COPY services/validator.py /app/services/
-COPY services/file_processor.py /app/services/
-COPY services/anki_generator.py /app/services/
-COPY services/card_creator.py /app/services/
-COPY services/logger.py /app/services/
-COPY services/exceptions.py /app/services/
+COPY main.py config.py /app/
+COPY services/ /app/services/
 
 # Create directory for temporary files
 RUN mkdir -p /app/tmp
