@@ -135,48 +135,54 @@ class FileProcessor(LoggerMixin):
         self.validator.validate_file_size(file)
 
         # Extract content
-        text = await self._extract_content(file)
+        try:
+            text = await self._extract_content(file)
 
-        # Store processed content if requested
-        if is_store_processed_content:
-            os.makedirs(processed_content_dir, exist_ok=True)
-            output_path = os.path.join(
-                processed_content_dir, "_".join(file.filename.split(".")) + ".md"
-            )
+            # Store processed content if requested
+            if is_store_processed_content:
+                os.makedirs(processed_content_dir, exist_ok=True)
+                output_path = os.path.join(
+                    processed_content_dir, "_".join(file.filename.split(".")) + ".md"
+                )
 
-            self.logger.debug(
-                "Storing processed content",
-                extra={
-                    "extra_fields": {
-                        "filename": file.filename,
-                        "output_path": output_path,
-                    }
-                },
-            )
-
-            try:
-                with open(output_path, "w", encoding="utf-8") as f:
-                    f.write(text)
-            except Exception as e:
-                self.logger.error(
-                    "Failed to store processed content",
+                self.logger.debug(
+                    "Storing processed content",
                     extra={
                         "extra_fields": {
                             "filename": file.filename,
                             "output_path": output_path,
-                            "error": str(e),
                         }
                     },
                 )
-                # Don't raise here as this is not critical to the main functionality
 
-        self.logger.info(
-            "File processing completed",
-            extra={
-                "extra_fields": {"filename": file.filename, "content_length": len(text)}
-            },
-        )
-        return text
+                try:
+                    with open(output_path, "w", encoding="utf-8") as f:
+                        f.write(text)
+                except Exception as e:
+                    self.logger.error(
+                        "Failed to store processed content",
+                        extra={
+                            "extra_fields": {
+                                "filename": file.filename,
+                                "output_path": output_path,
+                                "error": str(e),
+                            }
+                        },
+                    )
+                    # Don't raise here as this is not critical to the main functionality
+
+            self.logger.info(
+                "File processing completed",
+                extra={
+                    "extra_fields": {
+                        "filename": file.filename,
+                        "content_length": len(text),
+                    }
+                },
+            )
+            return text
+        except Exception as e:
+            raise e
 
 
 if __name__ == "__main__":

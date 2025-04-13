@@ -41,8 +41,8 @@ class AnkiDeckInterface(LoggerMixin):
         super().__init__()
         self.qa_model = self._create_qa_model()
         self.qa_with_img_model = self._create_qa_with_img_model()
-        settings = Settings()
-        self.processor = FileProcessor(settings)
+        self.settings = Settings()
+        self.processor = FileProcessor(self.settings)
 
     def _create_qa_model(self):
         self.logger.debug("Creating Anki model")
