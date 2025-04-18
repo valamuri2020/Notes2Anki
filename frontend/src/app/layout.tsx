@@ -49,11 +49,13 @@ export default function RootLayout({
                 file_extensions: [
                   'apkg','pdf','zip','doc','docx','xls','xlsx',
                   'ppt','pptx','txt','csv'
-                ]
+                ],
+                page_location: window.location.href
               });
             `,
           }}
         />
+
       </head>
       <body className={inter.className}>
         {children}
