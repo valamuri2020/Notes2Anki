@@ -38,20 +38,14 @@ export default function RootLayout({
           src="https://www.googletagmanager.com/gtag/js?id=G-X3LETSTQLT"
         />
         <Script
-          id="google-analytics"
+          id="gtag-init"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', 'G-X3LETSTQLT', {
-                file_extensions: [
-                  'apkg','pdf','zip','doc','docx','xls','xlsx',
-                  'ppt','pptx','txt','csv'
-                ],
-                page_location: window.location.href
-              });
+              gtag('config', 'G-X3LETSTQLT');
             `,
           }}
         />
