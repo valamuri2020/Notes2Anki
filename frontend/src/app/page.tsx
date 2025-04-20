@@ -9,6 +9,7 @@ import CreativeLoader from "@/components/ProcessingLoader";
 import DownloadSection from "@/components/DownloadSection";
 import DeckSettingsPage from "@/components/DeckSettingsPage";
 import KofiButton from "@/components/KofiButton";
+import EmailCaptureModal from "@/components/EmailCaptureModal";
 import { API_URL } from "@/lib/constants";
 import { toast } from "react-hot-toast";
 
@@ -29,6 +30,7 @@ export default function Home() {
   const [outputFormat, setOutputFormat] = useState<'apkg' | 'pdf' | 'csv'>('apkg');
   const [deckNames, setDeckNames] = useState<{ [key: string]: string }>({});
   const [showSettings, setShowSettings] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   // Set default deck names from uploaded files (without extension)
   useEffect(() => {
@@ -93,7 +95,6 @@ export default function Home() {
 
       const blob = await response.blob();
       const requestId = response.headers.get("X-Request-ID");
-      // const contentType = response.headers.get("Content-Type");
       const contentDisposition = response.headers.get("Content-Disposition");
       const filename = contentDisposition?.split("filename=")[1]?.replace(/"/g, "") ||
         (multipleDecksSetting ? "decks.zip" : `${deckNames[files[0].name]}.${outputFormat}`);
@@ -136,6 +137,40 @@ export default function Home() {
     setShowSettings(false);
   };
 
+  const handleEmailSubmit = async (email: string) => {
+    try {
+      // Send email to your backend
+      await fetch(`${API_URL}/add_email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+    } catch (error) {
+      console.error("Error saving email:", error);
+    }
+    setShowEmailModal(false);
+    handleDownload();
+  };
+
+  const handleDownloadClick = () => {
+    setShowEmailModal(true);
+  };
+
+  const handleDownload = () => {
+    if (!downloadData) return;
+    
+    const url = window.URL.createObjectURL(downloadData.blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = downloadData.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <main className="min-h-screen px-4 sm:px-6 py-8 sm:py-16 flex flex-col">
       <Toaster />
@@ -170,12 +205,6 @@ export default function Home() {
                   Next
                 </motion.button>
               </div>
-
-              {/* <div className="mt-6 sm:mt-9 p-2 border-2 border-dotted border-orange-500 rounded-lg bg-orange-100 text-center max-w-md mx-auto">
-                <p className="text-orange-800 text-xs sm:text-sm">
-                  This website is in beta testing, stuff might break, please be patient. It&apos;s my first time.
-                </p>
-              </div> */}
             </motion.div>
           )}
 
@@ -215,13 +244,14 @@ export default function Home() {
                   Create Another &rarr;
                 </button>
               </div>
-              <DownloadSection downloadData={downloadData} />
+              <DownloadSection 
+                downloadData={downloadData} 
+                onDownloadClick={handleDownloadClick}
+              />
               <p className="text-xs text-[#767676] mt-6 text-center">AI can make mistakes. Please verify important information.</p>
             </>
           )}
         </AnimatePresence>
-
-
       </div>
 
       <KofiButton />
@@ -229,6 +259,12 @@ export default function Home() {
       <footer className="w-full mt-auto pt-8 pb-4 text-center text-xs sm:text-sm text-gray-500">
         <p>No data is permanently stored. Made with ❤️ by <a href="https://www.linkedin.com/in/valamuri/" target="_blank" rel="noopener noreferrer" className="hover:text-black underline transition-colors">Vivek Alamuri</a>.</p>
       </footer>
+
+      <EmailCaptureModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        onEmailSubmit={handleEmailSubmit}
+      />
     </main>
   );
 }

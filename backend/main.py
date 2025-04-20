@@ -25,6 +25,8 @@ from config import Settings
 import time
 import os
 import zipfile
+import csv
+from datetime import datetime
 
 load_dotenv()
 
@@ -45,6 +47,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Email subscription model
+class EmailSubscription(BaseModel):
+    email: str
+
+@app.post("/add_email")
+async def subscribe_email(subscription: EmailSubscription):
+    """Add an an email address to the mailing list"""
+    try:
+        # Create emails.csv if it doesn't exist
+        if not os.path.exists("emails.csv"):
+            with open("emails.csv", "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["email", "timestamp"])
+
+        # Append the new email with timestamp
+        with open("emails.csv", "a", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([subscription.email, datetime.now().isoformat()])
+
+        return {"message": "Email subscribed successfully"}
+    except Exception as e:
+        app_logger.error(f"Error subscribing email: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to subscribe email")
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):

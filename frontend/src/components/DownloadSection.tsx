@@ -1,8 +1,7 @@
 // src/components/DownloadSection.tsx
 import { motion } from "framer-motion";
-import { Check, Download, Share2, Archive } from "lucide-react";
-import toast from "react-hot-toast";
-
+import { Check, Download, Archive } from "lucide-react";
+import { FEEDBACK_FORM_URL } from "@/lib/constants";
 interface DownloadData {
     filename: string;
     blob: Blob;
@@ -13,22 +12,12 @@ interface DownloadData {
 
 interface Props {
     downloadData: DownloadData;
+    onDownloadClick: () => void;
 }
 
-export default function DownloadSection({ downloadData }: Props) {
+export default function DownloadSection({ downloadData, onDownloadClick }: Props) {
     const fullFileName = downloadData.filename;
     const isZip = downloadData.isZip;
-
-    const handleDownload = () => {
-        const url = window.URL.createObjectURL(downloadData.blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fullFileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-    };
 
     return (
         <motion.div
@@ -100,31 +89,22 @@ export default function DownloadSection({ downloadData }: Props) {
                         className="bg-[#3A7DFF] hover:bg-[#316BDF] text-white px-8 py-3 rounded-lg 
                      flex items-center gap-2 font-medium transition-colors shadow-lg 
                      shadow-blue-500/20"
-                        onClick={handleDownload}
+                        onClick={onDownloadClick}
                     >
                         <Download className="w-5 h-5" />
                         Download {isZip ? 'All Decks' : 'Now'}
                     </motion.button>
 
-                    <button
-                        className="text-[#2C2C2C] hover:text-[#316BDF] transition-colors 
-                     flex items-center gap-2 text-sm"
-                        onClick={() => {
-                            navigator.clipboard.writeText(window.location.href)
-                                .then(() => toast.success("Copied link to clipboard - thanks for sharing 🎉"))
-                                .catch(() => toast.error("Oops, something went wrong"));
-                        }}
+                    <a
+                        href={FEEDBACK_FORM_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#767676] hover:text-[#2C2C2C] hover:underline transition-colors text-sm"
                     >
-                        <Share2 className="w-4 h-4" />
-                        Share this website
-                    </button>
+                        Have feedback? Let us know ⭐️
+                    </a>
                 </div>
             </motion.div>
-
-            {/* <p>AI can make mistakes - check important info.</p> */}
-            
-
-            {/* Optional: Add subtle confetti animation here */}
         </motion.div>
     );
 }
