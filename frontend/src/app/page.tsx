@@ -35,19 +35,19 @@ export default function Home() {
   // Set default deck names from uploaded files (without extension)
   useEffect(() => {
     if (files.length > 0) {
-      const newDeckNames = { ...deckNames };
-      let shouldUpdate = false;
-      
-      files.forEach(file => {
-        if (!newDeckNames[file.name]) {
-          newDeckNames[file.name] = file.name.replace(/\.[^/.]+$/, "");
-          shouldUpdate = true;
-        }
+      setDeckNames(prevDeckNames => {
+        const newDeckNames = { ...prevDeckNames };
+        let shouldUpdate = false;
+        
+        files.forEach(file => {
+          if (!newDeckNames[file.name]) {
+            newDeckNames[file.name] = file.name.replace(/\.[^/.]+$/, "");
+            shouldUpdate = true;
+          }
+        });
+        
+        return shouldUpdate ? newDeckNames : prevDeckNames;
       });
-      
-      if (shouldUpdate) {
-        setDeckNames(newDeckNames);
-      }
     }
   }, [files]);
 

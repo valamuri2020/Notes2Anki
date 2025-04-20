@@ -60,7 +60,7 @@ export default function EmailCaptureModal({ isOpen, onClose, onEmailSubmit}: Ema
 
             <h3 className="text-xl font-semibold mb-4">Almost there!</h3>
             <p className="text-gray-600 mb-6">
-              Enter your email to download your flashcards. We'll occasionally send helpful study resources. No spam, that's a promise!
+              Enter your email to download your flashcards. We&apos;ll occasionally send helpful study resources. No spam, that&apos;s a promise!
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
