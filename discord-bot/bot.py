@@ -52,8 +52,8 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    # Check if bot is mentioned
-    if bot.user.mentioned_in(message):
+    # Check if bot is directly mentioned (not @everyone, @here, or @role)
+    if bot.user in message.mentions:
         # Check for cooldown
         if is_on_cooldown(message.author.id):
             await message.reply("Please wait a moment before making another request! ⏳")
